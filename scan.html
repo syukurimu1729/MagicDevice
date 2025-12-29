@@ -12,178 +12,94 @@
             --bg-dark: #0d0d1a;
         }
         
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: #000; 
-            color: #e0e0ff; 
-            font-family: 'Segoe UI', sans-serif;
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; /* 全ての直下要素を中央へ */
-            overflow: hidden;
-            width: 100%;
+            background: #000; color: #e0e0ff; font-family: 'Segoe UI', sans-serif;
+            height: 100vh; display: flex; flex-direction: column; align-items: center;
+            overflow: hidden; width: 100%;
         }
 
         /* カメラエリア */
         #reader-wrapper { 
-            position: relative; 
-            flex: 1; 
-            width: 100%; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
+            position: relative; flex: 1; width: 100%; 
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
 
-        #reader { 
-            width: 100% !important; 
-            max-width: 500px;
-            border: none !important;
-        }
-        
-        #reader video { 
-            width: 100% !important; 
-            height: 100% !important; 
-            object-fit: cover !important; 
-        }
+        #reader { width: 100% !important; max-width: 500px; border: none !important; }
+        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
-        /* HUD装飾 */
+        /* HUD装飾（四隅） */
         .hud-corner {
             position: absolute; width: 30px; height: 30px;
             border: 2px solid var(--accent-red); z-index: 105;
-            filter: drop-shadow(var(--glow-red));
-            pointer-events: none;
+            filter: drop-shadow(var(--glow-red)); pointer-events: none;
         }
         .top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
         .top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
         .bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
         .bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
 
-        /* 操作パネル（下部） */
-        .controls {
-            flex-shrink: 0;
-            padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
-            width: 100%;
-            background: var(--bg-dark);
-            border-top: 1px solid var(--accent-red);
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* パネル内要素を中央へ */
-            justify-content: center;
-            z-index: 200;
+        /* QRコード用の中央枠（復活） */
+        #qr-shutter {
+            display: none; position: absolute; top: 50%; left: 50%; width: 220px; height: 220px;
+            border: 1px solid rgba(255, 45, 85, 0.5); 
+            background: rgba(255, 45, 85, 0.05);
+            transform: translate(-50%, -50%); z-index: 100;
+            box-shadow: inset 0 0 20px rgba(255, 45, 85, 0.2);
+            pointer-events: none;
         }
 
-        #scan-trigger {
-            background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
-            color: white; border: none; 
-            padding: 16px 10px;
-            border-radius: 12px; 
-            font-weight: bold; 
-            width: 85%;
-            max-width: 400px; 
-            margin-bottom: 15px; 
-            box-shadow: var(--glow-red);
-            cursor: pointer;
-            /* 文字サイズ調整 */
-            font-size: clamp(0.8rem, 4vw, 1.2rem); 
-            white-space: nowrap;
-        }
-
-        .btn-group { 
-            display: flex; 
-            justify-content: center; 
-            gap: 10px; 
-            margin-bottom: 15px; 
-            width: 100%;
-        }
-
-        .mode-btn {
-            background: rgba(255, 255, 255, 0.05); color: #888; border: 1px solid #333;
-            padding: 8px 16px; border-radius: 20px; 
-            font-size: 0.75rem; transition: 0.3s;
-            white-space: nowrap;
-        }
-        .mode-btn.active { color: white; border-color: var(--accent-red); background: rgba(255, 45, 85, 0.2); box-shadow: var(--glow-red); }
-
-        /* モーダル（解析結果BOX） */
-        #result-modal {
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%;
-            background: rgba(0,0,0,0.9); 
-            z-index: 1000;
-            /* 中央配置の徹底 */
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-        }
-
-        .modal-content {
-            background: #101025; 
-            border: 1px solid var(--accent-red); 
-            border-radius: 24px;
-            padding: 25px; 
-            width: 85%; 
-            max-width: 320px; 
-            box-shadow: var(--glow-red);
-            text-align: center;
-            /* 要素が右に寄らないように margin をリセット */
-            margin: 0; 
-        }
-
-        .modal-name { 
-            color: var(--accent-red); 
-            margin: 10px 0; 
-            font-weight: bold; 
-            text-shadow: var(--glow-red);
-            /* 長い魔法名でも1行に収まるよう調整 */
-            font-size: clamp(1rem, 5vw, 1.5rem);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .modal-desc { 
-            font-size: 0.85rem; 
-            line-height: 1.6; 
-            margin-bottom: 25px; 
-            color: #ccd; 
-        }
-
-        .modal-btn {
-            background: var(--accent-red); 
-            color: white; 
-            border: none; 
-            padding: 12px;
-            border-radius: 10px; 
-            font-size: 1rem; 
-            font-weight: bold; 
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .back-link { color: #555; text-decoration: none; font-size: 0.8rem; margin-top: 5px; }
-        
-        /* スキャン線 */
+        /* バーコード用の赤いスキャン線 */
         #barcode-line {
             display: none; position: absolute; top: 50%; left: 10%; width: 80%; height: 2px;
             background: var(--accent-red); box-shadow: var(--glow-red);
             z-index: 110; animation: scan-move 2s infinite ease-in-out;
+            pointer-events: none;
         }
         @keyframes scan-move {
             0%, 100% { transform: translateY(-40px); opacity: 0.3; }
             50% { transform: translateY(40px); opacity: 1; }
         }
 
+        /* 操作パネル */
+        .controls {
+            flex-shrink: 0; padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
+            width: 100%; background: var(--bg-dark); border-top: 1px solid var(--accent-red);
+            display: flex; flex-direction: column; align-items: center; z-index: 200;
+        }
+
+        #scan-trigger {
+            background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
+            color: white; border: none; padding: 16px 10px; border-radius: 12px; 
+            font-weight: bold; width: 85%; max-width: 400px; margin-bottom: 15px; 
+            box-shadow: var(--glow-red); cursor: pointer;
+            font-size: clamp(0.8rem, 4vw, 1.2rem); white-space: nowrap;
+        }
+
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; width: 100%; }
+        .mode-btn {
+            background: rgba(255, 255, 255, 0.05); color: #888; border: 1px solid #333;
+            padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; transition: 0.3s;
+        }
+        .mode-btn.active { color: white; border-color: var(--accent-red); background: rgba(255, 45, 85, 0.2); box-shadow: var(--glow-red); }
+
+        /* モーダル */
+        #result-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 1000;
+            justify-content: center; align-items: center; 
+        }
+        .modal-content {
+            background: #101025; border: 1px solid var(--accent-red); border-radius: 24px;
+            padding: 25px; width: 85%; max-width: 320px; box-shadow: var(--glow-red); text-align: center;
+        }
+        .modal-name { 
+            color: var(--accent-red); margin: 10px 0; font-weight: bold; 
+            font-size: clamp(1rem, 5vw, 1.5rem); text-shadow: var(--glow-red);
+        }
+
+        .back-link { color: #555; text-decoration: none; font-size: 0.8rem; margin-top: 5px; }
         #reader__dashboard { display: none !important; }
     </style>
 </head>
@@ -196,6 +112,8 @@
         <div class="hud-corner bottom-right"></div>
 
         <div id="reader"></div>
+
+        <div id="qr-shutter"></div>
         <div id="barcode-line"></div>
     </div>
 
@@ -213,8 +131,8 @@
         <div class="modal-content">
             <div id="modal-title" style="font-size: 0.7rem; color: #666;">DATA ACQUIRED</div>
             <div id="modal-name" class="modal-name">魔法名</div>
-            <div id="modal-desc" class="modal-desc">魔法の説明文</div>
-            <button class="modal-btn" onclick="closeModal()">閉じる</button>
+            <div id="modal-desc" style="font-size: 0.85rem; line-height: 1.6; margin-bottom: 25px; color: #ccd;">説明文</div>
+            <button class="modal-btn" style="background:var(--accent-red); color:white; border:none; padding:12px; border-radius:10px; width:100%; cursor:pointer;" onclick="closeModal()">閉じる</button>
         </div>
     </div>
 
@@ -236,14 +154,20 @@
             currentMode = mode;
             lastResult = null;
             const statusMsg = document.getElementById('status-msg');
+            const qrShutter = document.getElementById('qr-shutter');
             const barcodeLine = document.getElementById('barcode-line');
 
             if (html5QrCode) { await html5QrCode.stop().catch(()=>{}); }
 
             document.getElementById('btn-barcode').classList.toggle('active', mode === 'barcode');
             document.getElementById('btn-qr').classList.toggle('active', mode === 'qr');
+            
+            // ガイド枠の表示切り替え
+            qrShutter.style.display = (mode === 'qr' ? 'block' : 'none');
             barcodeLine.style.display = (mode === 'barcode' ? 'block' : 'none');
+            
             statusMsg.innerText = "コードを探索中...";
+            statusMsg.style.color = "#888";
 
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 20 }, (text) => {
@@ -288,9 +212,7 @@
             document.getElementById('result-modal').style.display = 'flex';
         }
 
-        function closeModal() {
-            location.href = "index.html";
-        }
+        function closeModal() { location.href = "index.html"; }
 
         window.onload = loadData;
     </script>
