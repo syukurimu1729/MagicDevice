@@ -103,10 +103,21 @@
         .btn-url {
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
-            text-decoration: none; display: inline-block;
-            width: auto; max-width: 90%; /* 文字数に合わせて幅を変える */
-            padding: 12px 20px;
-            font-size: 0.95rem;
+            text-decoration: none; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 90%;
+            max-width: 320px;
+            height: 50px; 
+            padding: 0 15px;
+            font-size: 0.85rem; /* サイズをあらかじめ小さめに設定 */
+            font-weight: bold;
+            white-space: nowrap; /* 改行禁止 */
+            overflow: hidden; /* はみ出し禁止 */
+            text-overflow: ellipsis; /* 万が一溢れたら「...」にする */
+            border-radius: 12px;
+            box-sizing: border-box;
         }
 
         .btn-scan { text-decoration: none; display: inline-block; margin: 20px 0; color: var(--accent-red); font-size: 0.9rem; font-weight: bold; border-bottom: 1px solid var(--accent-red); padding-bottom: 2px; }
