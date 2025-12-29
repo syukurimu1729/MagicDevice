@@ -40,7 +40,7 @@
         .bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
         .bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
 
-        /* QRコード用の中央枠（復活） */
+        /* QR用ガイド枠 */
         #qr-shutter {
             display: none; position: absolute; top: 50%; left: 50%; width: 220px; height: 220px;
             border: 1px solid rgba(255, 45, 85, 0.5); 
@@ -50,7 +50,7 @@
             pointer-events: none;
         }
 
-        /* バーコード用の赤いスキャン線 */
+        /* バーコード用スキャン線 */
         #barcode-line {
             display: none; position: absolute; top: 50%; left: 10%; width: 80%; height: 2px;
             background: var(--accent-red); box-shadow: var(--glow-red);
@@ -67,6 +67,11 @@
             flex-shrink: 0; padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
             width: 100%; background: var(--bg-dark); border-top: 1px solid var(--accent-red);
             display: flex; flex-direction: column; align-items: center; z-index: 200;
+        }
+
+        #status-msg {
+            font-size: 0.75rem; margin-bottom: 8px; color: #888;
+            transition: color 0.3s ease; letter-spacing: 0.1rem;
         }
 
         #scan-trigger {
@@ -110,15 +115,13 @@
         <div class="hud-corner top-right"></div>
         <div class="hud-corner bottom-left"></div>
         <div class="hud-corner bottom-right"></div>
-
         <div id="reader"></div>
-
         <div id="qr-shutter"></div>
         <div id="barcode-line"></div>
     </div>
 
     <div class="controls">
-        <div id="status-msg" style="font-size: 0.75rem; margin-bottom: 8px; color: #888;">SYSTEM READY</div>
+        <div id="status-msg">SYSTEM READY</div>
         <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
         <div class="btn-group">
             <button id="btn-barcode" class="mode-btn" onclick="startScanner('barcode')">魔法習得</button>
@@ -141,6 +144,7 @@
         let lastResult = null;
         let currentMode = 'barcode';
         let gameData = null;
+        let isErrorState = false; // エラー表示中かどうか
 
         async function loadData() {
             try {
@@ -153,6 +157,7 @@
         async function startScanner(mode) {
             currentMode = mode;
             lastResult = null;
+            isErrorState = false;
             const statusMsg = document.getElementById('status-msg');
             const qrShutter = document.getElementById('qr-shutter');
             const barcodeLine = document.getElementById('barcode-line');
@@ -162,7 +167,6 @@
             document.getElementById('btn-barcode').classList.toggle('active', mode === 'barcode');
             document.getElementById('btn-qr').classList.toggle('active', mode === 'qr');
             
-            // ガイド枠の表示切り替え
             qrShutter.style.display = (mode === 'qr' ? 'block' : 'none');
             barcodeLine.style.display = (mode === 'barcode' ? 'block' : 'none');
             
@@ -171,6 +175,7 @@
 
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 20 }, (text) => {
+                if (isErrorState) return; // エラー表示中は書き換えない
                 lastResult = text;
                 statusMsg.innerText = "解析準備完了";
                 statusMsg.style.color = "#00ffcc";
@@ -178,10 +183,27 @@
         }
 
         function pressScan() {
+            const statusMsg = document.getElementById('status-msg');
+            
             if (lastResult) {
                 handleSuccess(currentMode, lastResult);
             } else {
-                alert("コードを読み取っていません");
+                // アラートの代わりにステータスを赤文字で更新
+                isErrorState = true;
+                statusMsg.innerText = "解析に失敗しました";
+                statusMsg.style.color = var(--accent-red);
+
+                // 2秒後に元の状態に戻す
+                setTimeout(() => {
+                    isErrorState = false;
+                    if (lastResult) {
+                        statusMsg.innerText = "解析準備完了";
+                        statusMsg.style.color = "#00ffcc";
+                    } else {
+                        statusMsg.innerText = "コードを探索中...";
+                        statusMsg.style.color = "#888";
+                    }
+                }, 2000);
             }
         }
 
@@ -198,10 +220,18 @@
                     } else {
                         showModal("INFO", magic.name, "既に習得済みの魔法です");
                     }
+                } else {
+                    // 未定義のバーコードの場合もエラー通知
+                    lastResult = null;
+                    pressScan();
                 }
             } else if (cleanText.startsWith("MEDIA:")) {
                 localStorage.setItem('currentMedia', cleanText.split(":")[1]);
                 location.href = "index.html";
+            } else {
+                // 不正なQRの場合もエラー通知
+                lastResult = null;
+                pressScan();
             }
         }
 
