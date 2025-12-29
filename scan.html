@@ -22,28 +22,27 @@
             overflow: hidden;
         }
 
-        /* カメラエリアを画面上部に固定 */
         #reader-wrapper {
             position: relative;
-            flex: 1; /* パネル以外の残り全域 */
+            flex: 1;
             width: 100%;
             overflow: hidden;
             background: #000;
         }
 
-        /* ライブラリのビデオ要素を画面いっぱいに */
         #reader {
             width: 100% !important;
             height: 100% !important;
             border: none !important;
         }
+        
         #reader video {
             width: 100% !important;
             height: 100% !important;
-            object-fit: cover !important; /* 余白を消す */
+            object-fit: cover !important;
         }
 
-        /* 自前のQRガイド枠（正方形） */
+        /* 自前のガイド枠（QR用） */
         #qr-shutter {
             display: none;
             position: absolute;
@@ -53,7 +52,7 @@
             width: 250px;
             height: 250px;
             border: 2px solid var(--magic-red);
-            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); /* 周囲を暗くする */
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5);
             z-index: 10;
             pointer-events: none;
         }
@@ -73,7 +72,6 @@
             pointer-events: none;
         }
 
-        /* 下部操作パネル */
         .controls {
             height: var(--panel-height);
             background: #1a1a2e;
@@ -97,7 +95,7 @@
         .status-text { font-size: 0.8em; margin-bottom: 8px; color: #ccc; }
         .back-link { color: #888; text-decoration: none; font-size: 0.8em; }
 
-        /* ライブラリが自動生成する不要な枠を隠す */
+        /* ライブラリのデフォルトUIを非表示 */
         #reader__dashboard, #reader__scan_region img {
             display: none !important;
         }
@@ -129,29 +127,43 @@
             const barcodeLine = document.getElementById('barcode-line');
 
             if (html5QrCode && html5QrCode.isScanning) {
-                await html5QrCode.stop();
+                await html5QrCode.stop().catch(()=>{});
+                html5QrCode.clear();
             }
 
             document.getElementById('btn-barcode').className = (mode === 'barcode' ? 'active' : '');
             document.getElementById('btn-qr').className = (mode === 'qr' ? 'active' : '');
 
             let formats;
+            let scanBox;
+            
             if (mode === 'barcode') {
-                formats = [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13];
+                // CODE_39を優先的に追加
+                formats = [
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.EAN_13
+                ];
                 qrShutter.style.display = 'none';
                 barcodeLine.style.display = 'block';
-                statusMsg.innerText = "魔法コード（バーコード）をスキャンしてください";
+                statusMsg.innerText = "バーコードを赤い線に合わせてください";
+                // 認識エリアを横長に設定
+                scanBox = { width: 300, height: 120 };
             } else {
                 formats = [Html5QrcodeSupportedFormats.QR_CODE];
                 qrShutter.style.display = 'block';
                 barcodeLine.style.display = 'none';
-                statusMsg.innerText = "媒体（QRコード）を枠内に収めてください";
+                statusMsg.innerText = "QRコードを枠内に収めてください";
+                // 認識エリアを正方形に設定
+                scanBox = { width: 250, height: 250 };
             }
 
             html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
 
-            // qrboxをnullにすることでライブラリ側の枠描画を無効化（自前で描画するため）
-            const config = { fps: 15, qrbox: null };
+            const config = { 
+                fps: 20, 
+                qrbox: scanBox // 認識エリアを限定して精度を向上
+            };
 
             html5QrCode.start({ facingMode: "environment" }, config, (text) => {
                 handleSuccess(mode, text);
@@ -161,36 +173,37 @@
         }
 
         function handleSuccess(mode, text) {
-        if (mode === 'barcode') {
-            // バーコード番号を魔法IDに変換
-            let magicId = null;
-            if (text === "627369") magicId = "Color";
-            else if (text === "738739") magicId = "Connect";
-            else if (text === "697657") magicId = "Align";
-    
-            if (magicId) {
-                let magics = JSON.parse(localStorage.getItem('myMagics')) || [];
-                if (!magics.includes(magicId)) {
-                    magics.push(magicId);
-                    localStorage.setItem('myMagics', JSON.stringify(magics));
-                    alert("新しい魔法を習得しました！");
+            if (mode === 'barcode') {
+                let magicId = null;
+                // 番号と魔法IDの紐付け
+                if (text === "627369") magicId = "Color";
+                else if (text === "738739") magicId = "Connect";
+                else if (text === "697657") magicId = "Align";
+
+                if (magicId) {
+                    let magics = JSON.parse(localStorage.getItem('myMagics')) || [];
+                    if (!magics.includes(magicId)) {
+                        magics.push(magicId);
+                        localStorage.setItem('myMagics', JSON.stringify(magics));
+                        alert("魔法「" + magicId + "」を習得しました！");
+                    } else {
+                        alert("すでに習得済みの魔法です");
+                    }
+                } else {
+                    alert("このコードには魔法が宿っていないようだ... (" + text + ")");
+                    return; 
                 }
             } else {
-                alert("このコードには魔法が宿っていないようだ...");
-                return; // 登録外の番号なら戻らない
+                if (text.startsWith("MEDIA:")) {
+                    const mediaId = text.split(":")[1];
+                    localStorage.setItem('currentMedia', mediaId);
+                } else {
+                    alert("有効な媒体ではありません");
+                    return;
+                }
             }
-        } else {
-            // 媒体読み込み（以前と同じ）
-            if (text.startsWith("MEDIA:")) {
-                const mediaId = text.split(":")[1];
-                localStorage.setItem('currentMedia', mediaId);
-            } else {
-                alert("有効な媒体ではありません");
-                return;
-            }
+            location.href = "index.html";
         }
-        location.href = "index.html";
-    }
 
         window.onload = () => startScanner('barcode');
     </script>
