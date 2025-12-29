@@ -40,7 +40,6 @@
             transition: all 0.5s ease; width: 100%; box-sizing: border-box;
         }
 
-        /* 画像コンテナ：画面幅に合わせて常に一定のサイズ（正方形）を維持 */
         .img-container {
             width: 100%; max-width: 300px; aspect-ratio: 1 / 1; margin: 10px auto;
             border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
@@ -48,12 +47,11 @@
         }
 
         #display-img { 
-            width: 100%; height: 100%; object-fit: cover; /* 枠に合わせてトリミング/リサイズ */
+            width: 100%; height: 100%; object-fit: cover;
             cursor: zoom-in; transition: transform 0.3s;
         }
         .img-anim { animation: imgUpdate 0.5s ease-out; }
 
-        /* カスタムセレクトボックス（貧相さを解消） */
         .select-wrapper { 
             position: relative; width: 100%; max-width: 280px; margin: 15px auto;
         }
@@ -64,7 +62,6 @@
             box-shadow: inset 0 0 10px rgba(255, 45, 85, 0.1);
             font-family: inherit;
         }
-        select:focus { box-shadow: var(--glow-red); background: rgba(255, 45, 85, 0.15); }
         
         .select-wrapper::after { 
             content: "▼"; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
@@ -125,8 +122,8 @@
 
     <div class="panel">
         <h2 id="media-title" style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 0.1rem;">SIGNAL LOST</h2>
-        <div class="img-container">
-            <img id="display-img" src="assets/media/no-signal.jpg" onclick="openModal()">
+        <div id="img-area" class="img-container hidden">
+            <img id="display-img" src="" onclick="openModal()">
         </div>
         <p id="result-text">周囲をスキャンして解析対象を捉えてください</p>
         
@@ -182,12 +179,13 @@
             const myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
             
             const mediaTitle = document.getElementById('media-title');
+            const imgArea = document.getElementById('img-area');
             const displayImg = document.getElementById('display-img');
             const select = document.getElementById('magic-select');
             const noMagicMsg = document.getElementById('no-magic-msg');
             const reverseUi = document.getElementById('reverse-ui');
 
-            // 1. 魔法プルダウンの更新（媒体の有無に関わらず実行）
+            // 1. 魔法プルダウンの更新
             select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
             let hasMagic = false;
             gameData.magics.forEach(m => {
@@ -212,14 +210,16 @@
 
             if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
 
-            // 2. 媒体データの反映
+            // 2. 媒体データの反映と画像の表示制御
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
-                mediaTitle.innerText = "CONNECTED: " + mediaId;
+                mediaTitle.innerText = "ANALYZING..."; // 「CONNECTED: ID」を隠して雰囲気重視の表記に
                 displayImg.src = "assets/media/" + data.default_img;
+                imgArea.classList.remove('hidden'); // 接続中なら表示
             } else {
                 mediaTitle.innerText = "SIGNAL LOST";
-                displayImg.src = "assets/media/no-signal.jpg"; // 未接続用画像
+                imgArea.classList.add('hidden'); // 未接続なら非表示（無の画像をださない）
+                displayImg.src = ""; 
             }
         }
 
@@ -235,13 +235,11 @@
                 return;
             }
 
-            // 媒体がない場合
             if (!mediaId || !gameData.media_data[mediaId]) {
                 resultText.innerText = "対象が存在しません。スキャンを行ってください。";
                 return;
             }
 
-            // 魔法実行アニメ
             displayImg.classList.remove('img-anim');
             void displayImg.offsetWidth;
             displayImg.classList.add('img-anim');
@@ -271,7 +269,10 @@
             const displayImg = document.getElementById('display-img');
             const overlay = document.getElementById('image-overlay');
             const overlayImg = document.getElementById('overlay-img');
-            if (displayImg.src) { overlayImg.src = displayImg.src; overlay.style.display = 'flex'; }
+            if (displayImg.src && !document.getElementById('img-area').classList.contains('hidden')) { 
+                overlayImg.src = displayImg.src; 
+                overlay.style.display = 'flex'; 
+            }
         }
         function closeModal() { document.getElementById('image-overlay').style.display = 'none'; }
 
