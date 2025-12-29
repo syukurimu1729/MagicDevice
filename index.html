@@ -6,114 +6,186 @@
     <title>魔法の端末</title>
     <style>
         :root {
-            --bg-color: #1a1a2e;
-            --panel-color: rgba(22, 33, 62, 0.8);
-            --accent-red: #e94560;
-            --accent-rev: #9b30ff; /* 反転時の紫 */
+            --bg-color: #0d0d1a;
+            --panel-bg: rgba(20, 20, 45, 0.7);
+            --accent-red: #ff2d55;
+            --accent-rev: #bc13fe;
+            --glow-red: 0 0 15px rgba(255, 45, 85, 0.6);
+            --glow-rev: 0 0 15px rgba(188, 19, 254, 0.6);
         }
 
         body { 
             background: var(--bg-color); 
-            color: white; 
+            color: #e0e0ff; 
             text-align: center; 
-            font-family: sans-serif; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             margin: 0; 
             padding: 20px;
-            transition: background 0.5s, filter 0.5s;
+            transition: background 0.8s;
+            overflow-x: hidden;
         }
 
-        /* 反転状態のスタイル */
-        body.is-reversed {
-            --accent-red: var(--accent-rev);
-            background: #0d001a;
-            filter: hue-rotate(180deg) brightness(1.2); /* 全体の色相を回して異界感を出す */
+        /* 幻想的な背景の揺らぎ */
+        body::before {
+            content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1a1a3a 0%, #0d0d1a 100%);
+            z-index: -1;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            letter-spacing: 0.2rem;
+            text-shadow: 0 0 10px var(--accent-red);
+            margin-bottom: 25px;
+            color: #fff;
         }
 
         .panel { 
-            border: 2px solid var(--accent-red); 
-            border-radius: 15px; 
-            padding: 15px; 
+            border: 1px solid var(--accent-red); 
+            border-radius: 20px; 
+            padding: 20px; 
             margin-bottom: 20px; 
-            background: var(--panel-color); 
-            transition: border-color 0.5s;
+            background: var(--panel-bg); 
+            backdrop-filter: blur(10px);
+            box-shadow: var(--glow-red), inset 0 0 20px rgba(0,0,0,0.5);
+            transition: all 0.5s ease;
         }
 
         #display-img { 
-            max-width: 100%; height: auto; border-radius: 10px; 
-            margin: 15px 0; border: 1px solid #444; cursor: zoom-in;
+            max-width: 100%; height: auto; border-radius: 12px; 
+            margin: 15px 0; border: 1px solid rgba(255,255,255,0.1); 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            cursor: zoom-in;
+            /* 反転演出から除外 */
+            filter: none !important; 
         }
-        
-        /* 反転スイッチのスタイル */
+
+        /* 反転時の全体演出（画像以外） */
+        body.is-reversed {
+            --accent-red: var(--accent-rev);
+            --glow-red: var(--glow-rev);
+        }
+        body.is-reversed h1 { text-shadow: 0 0 10px var(--accent-rev); }
+
+        /* 反転スイッチ */
         .reverse-container {
-            margin: 15px 0;
-            padding: 15px;
-            border: 2px dashed var(--accent-rev);
-            border-radius: 12px;
+            margin-bottom: 20px;
+            padding: 12px;
+            border-radius: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 15px;
-            background: rgba(155, 48, 255, 0.1);
+            background: rgba(188, 19, 254, 0.05);
+            border: 1px solid rgba(188, 19, 254, 0.3);
+            box-shadow: inset 0 0 10px rgba(188, 19, 254, 0.1);
         }
-        .reverse-label { font-weight: bold; color: var(--accent-rev); text-shadow: 0 0 5px black; }
+        .reverse-label { 
+            font-size: 0.9rem;
+            font-weight: bold; 
+            color: var(--accent-rev); 
+            text-shadow: 0 0 8px var(--accent-rev);
+        }
 
-        .switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #444; transition: .4s; border-radius: 34px;
+            background-color: #222; transition: .4s; border-radius: 34px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .slider:before {
-            position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px;
-            background-color: white; transition: .4s; border-radius: 50%;
+            position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+            background-color: #fff; transition: .4s; border-radius: 50%;
+            box-shadow: 0 0 10px #fff;
         }
-        input:checked + .slider { background-color: var(--accent-rev); box-shadow: 0 0 10px var(--accent-rev); }
-        input:checked + .slider:before { transform: translateX(30px); }
+        input:checked + .slider { background-color: rgba(155, 48, 255, 0.4); border-color: var(--accent-rev); }
+        input:checked + .slider:before { transform: translateX(26px); background-color: var(--accent-rev); box-shadow: 0 0 15px var(--accent-rev); }
 
-        .magic-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-        select, button { 
-            background: #0f3460; color: white; border: 1px solid var(--accent-red); 
-            padding: 12px; border-radius: 8px; font-size: 1em; width: 80%; max-width: 300px;
-            transition: border-color 0.5s;
+        /* リッチなセレクトボックス */
+        .select-wrapper {
+            position: relative;
+            width: 85%;
+            max-width: 320px;
+            margin-bottom: 15px;
+        }
+        select { 
+            appearance: none;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff; 
+            border: 1px solid var(--accent-red); 
+            padding: 14px 20px; 
+            border-radius: 12px; 
+            font-size: 1rem; 
+            width: 100%;
+            cursor: pointer;
+            outline: none;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
+        }
+        select:focus { box-shadow: var(--glow-red); }
+        .select-wrapper::after {
+            content: "▼"; position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            color: var(--accent-red); font-size: 0.8rem; pointer-events: none;
+        }
+
+        /* 発動ボタン */
+        .btn-cast {
+            background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
+            color: white; border: none; padding: 14px 40px; border-radius: 12px; 
+            font-size: 1.1rem; font-weight: bold; width: 85%; max-width: 320px;
+            box-shadow: var(--glow-red); cursor: pointer; transition: 0.3s;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .btn-cast:active { transform: scale(0.96); opacity: 0.8; }
+
+        .btn-scan { 
+            text-decoration: none; display: inline-block; margin-top: 30px; 
+            color: var(--accent-red); font-size: 0.9rem; font-weight: bold;
+            letter-spacing: 0.1rem; border-bottom: 1px solid var(--accent-red);
+            padding-bottom: 2px; transition: 0.3s;
         }
         
-        .btn-scan { background: var(--accent-red); text-decoration: none; display: inline-block; margin-top: 20px; padding: 12px 24px; border-radius: 8px; color: white; font-weight: bold; transition: background 0.5s; }
+        #result-text { margin-top: 20px; font-size: 0.95rem; line-height: 1.6; color: #cbd5e0; min-height: 1.5em; }
+
         .hidden { display: none !important; }
 
-        /* 拡大モーダル */
+        /* モーダル */
         #image-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center;
+            background: rgba(0, 0, 0, 0.95); z-index: 1000; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
         }
-        #overlay-img { max-width: 95%; max-height: 95%; object-fit: contain; }
     </style>
 </head>
 <body>
-    <h1>魔法の端末</h1>
+    <h1>ANOMALY DETECTOR</h1>
 
-    <div class="panel">
-        <h2 id="media-title">媒体未接続</h2>
+    <div class="panel" id="main-panel">
+        <h2 id="media-title" style="font-size: 0.9rem; opacity: 0.7; letter-spacing: 0.2rem;">SIGNAL LOST</h2>
         <img id="display-img" class="hidden" onclick="openModal()">
-        <p id="result-text">スキャンして媒体に接続してください</p>
+        <p id="result-text">周囲をスキャンして解析対象を捉えてください</p>
     </div>
 
-    <div id="action-ui" class="panel hidden">
+    <div id="action-ui" class="hidden">
         <div id="reverse-ui" class="reverse-container hidden">
-            <span class="reverse-label">反転の理</span>
+            <span class="reverse-label">REVERSE LOGIC</span>
             <label class="switch">
                 <input type="checkbox" id="reverse-switch" onchange="toggleReverseMode()">
                 <span class="slider"></span>
             </label>
         </div>
 
-        <div class="magic-controls">
-            <select id="magic-select"></select>
-            <button onclick="castMagic()">魔法を発動する</button>
+        <div class="panel" style="display: flex; flex-direction: column; align-items: center;">
+            <div class="select-wrapper">
+                <select id="magic-select"></select>
+            </div>
+            <button class="btn-cast" onclick="castMagic()">魔法を流し込む</button>
+            <p id="no-magic-msg" class="hidden" style="font-size: 0.8rem; opacity: 0.6;">使用可能な魔法がありません</p>
         </div>
-        <p id="no-magic-msg" class="hidden">習得済みの魔法がありません</p>
     </div>
 
-    <a href="scan.html" class="btn-scan">スキャンモード</a>
+    <a href="scan.html" class="btn-scan">スキャンモードを起動</a>
 
     <div id="image-overlay" onclick="closeModal()">
         <img id="overlay-img" src="">
@@ -127,16 +199,12 @@
                 const res = await fetch('magics.json');
                 gameData = await res.json();
                 updateUI();
-            } catch (e) { console.error("データの読み込み失敗"); }
+            } catch (e) { console.error("Data Load Error"); }
         }
 
         function toggleReverseMode() {
             const isReverse = document.getElementById('reverse-switch').checked;
-            if (isReverse) {
-                document.body.classList.add('is-reversed');
-            } else {
-                document.body.classList.remove('is-reversed');
-            }
+            document.body.classList.toggle('is-reversed', isReverse);
         }
 
         function updateUI() {
@@ -152,12 +220,11 @@
 
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
-                mediaTitle.innerText = "媒体接続中";
+                mediaTitle.innerText = "CONNECTED";
                 displayImg.src = "assets/media/" + data.default_img;
                 displayImg.classList.remove('hidden');
                 actionUi.classList.remove('hidden');
 
-                // 魔法リスト（Reverse以外を表示）
                 select.innerHTML = "";
                 let hasMagic = false;
                 gameData.magics.forEach(m => {
@@ -178,10 +245,7 @@
                     noMagicMsg.classList.remove('hidden');
                 }
 
-                // 反転魔法を持っているかチェック
-                if (myMagics.includes('Reverse')) {
-                    reverseUi.classList.remove('hidden');
-                }
+                if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
             }
         }
 
@@ -191,9 +255,12 @@
             const isReverse = document.getElementById('reverse-switch').checked;
             if (!magicId) return;
 
-            // 反転時は ID_rev を探す
             const targetKey = isReverse ? magicId + "_rev" : magicId;
-            const effect = gameData.media_data[mediaId].effects[targetKey];
+            const media = gameData.media_data[mediaId];
+            
+            // 判定の厳格化：JSONに指定がない場合はすべて「何も起きなかった」
+            const effect = (media.effects && media.effects[targetKey]) ? media.effects[targetKey] : null;
+            
             const resultText = document.getElementById('result-text');
             const displayImg = document.getElementById('display-img');
 
@@ -201,7 +268,9 @@
                 resultText.innerText = effect.res;
                 displayImg.src = "assets/media/" + effect.img;
             } else {
-                resultText.innerText = isReverse ? "反転の理を以てしても、何も起きないようだ..." : "その魔法はこの媒体には効果がないようだ...";
+                resultText.innerText = "何も起きなかったようだ...";
+                // デフォルト画像に戻す
+                displayImg.src = "assets/media/" + media.default_img;
             }
         }
 
