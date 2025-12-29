@@ -10,7 +10,7 @@
       "default_img": "default.jpg",
       "effects": {
         "Color": { "res": "色が戻った！", "img": "color.jpg" },
-        "Color_rev": { "res": "色が吸い取られ、モノクロの世界になった...", "img": "monochrome.jpg" }
+        "Color_rev": { "res": "色が吸い取られ、モノクロの世界になった...", "img": "color.jpg" }
       }
     }
   }
