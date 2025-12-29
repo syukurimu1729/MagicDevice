@@ -8,9 +8,17 @@
         body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; }
         .panel { border: 2px solid #e94560; border-radius: 15px; padding: 15px; margin-bottom: 20px; background: rgba(22, 33, 62, 0.8); }
         #display-img { max-width: 100%; height: auto; border-radius: 10px; margin: 15px 0; border: 1px solid #444; }
-        select, button { background: #0f3460; color: white; border: 1px solid #e94560; padding: 10px 20px; border-radius: 5px; font-size: 1em; }
-        .btn-scan { background: #e94560; text-decoration: none; display: inline-block; margin-top: 20px; padding: 10px 20px; border-radius: 5px; color: white; font-weight: bold; }
-        .hidden { display: none; }
+        
+        /* 魔法選択エリア */
+        .magic-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        select, button { 
+            background: #0f3460; color: white; border: 1px solid #e94560; 
+            padding: 12px; border-radius: 8px; font-size: 1em; width: 80%; max-width: 300px;
+        }
+        
+        .btn-scan { background: #e94560; text-decoration: none; display: inline-block; margin-top: 20px; padding: 12px 24px; border-radius: 8px; color: white; font-weight: bold; }
+        .hidden { display: none !important; }
+        .status-msg { font-size: 0.9em; color: #ccc; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -18,66 +26,91 @@
 
     <div class="panel">
         <h2 id="media-title">媒体未接続</h2>
-        <img id="display-img" src="" class="hidden">
-        <p id="result-text">QRコードをスキャンして媒体に接続してください。</p>
+        <img id="display-img" class="hidden">
+        <p id="result-text">スキャンして媒体に接続してください</p>
     </div>
 
     <div id="action-ui" class="panel hidden">
-        <select id="magic-select"></select>
-        <button onclick="castMagic()">魔法発動</button>
+        <div class="magic-controls">
+            <select id="magic-select">
+                </select>
+            <button onclick="castMagic()">魔法を発動する</button>
+        </div>
+        <p id="no-magic-msg" class="hidden">習得済みの魔法がありません</p>
     </div>
 
-    <a href="scan.html" class="btn-scan">スキャンモード起動</a>
+    <a href="scan.html" class="btn-scan">スキャンモード</a>
 
     <script>
         let gameData = null;
 
         async function init() {
-            // 1. JSONデータの読み込み
-            const res = await fetch('magics.json');
-            gameData = await res.json();
-
-            // 2. 魔法セレクトボックスの生成
-            const select = document.getElementById('magic-select');
-            gameData.magics.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.innerText = m.name;
-                select.appendChild(opt);
-            });
-
-            updateUI();
+            try {
+                const res = await fetch('magics.json');
+                gameData = await res.json();
+                updateUI();
+            } catch (e) {
+                console.error("データの読み込みに失敗しました");
+            }
         }
 
         function updateUI() {
             const mediaId = localStorage.getItem('currentMedia');
+            const myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
+            
             const mediaTitle = document.getElementById('media-title');
             const displayImg = document.getElementById('display-img');
             const actionUi = document.getElementById('action-ui');
+            const select = document.getElementById('magic-select');
+            const noMagicMsg = document.getElementById('no-magic-msg');
 
+            // 1. 媒体情報の表示
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
-                mediaTitle.innerText = "接続中: " + mediaId;
+                mediaTitle.innerText = "媒体接続中"; // IDを表示せず固定文字に
                 displayImg.src = "assets/media/" + data.default_img;
                 displayImg.classList.remove('hidden');
                 actionUi.classList.remove('hidden');
+
+                // 2. 習得済み魔法リストの更新
+                select.innerHTML = "";
+                let hasMagic = false;
+
+                gameData.magics.forEach(m => {
+                    // バーコードで読み取ったIDがmyMagicsに含まれているか確認
+                    if (myMagics.includes(m.id)) {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.innerText = m.name;
+                        select.appendChild(opt);
+                        hasMagic = true;
+                    }
+                });
+
+                if (hasMagic) {
+                    select.classList.remove('hidden');
+                    noMagicMsg.classList.add('hidden');
+                } else {
+                    select.classList.add('hidden');
+                    noMagicMsg.classList.remove('hidden');
+                }
             }
         }
 
         function castMagic() {
             const mediaId = localStorage.getItem('currentMedia');
             const magicId = document.getElementById('magic-select').value;
+            if (!magicId) return;
+
             const effect = gameData.media_data[mediaId].effects[magicId];
-            
             const resultText = document.getElementById('result-text');
             const displayImg = document.getElementById('display-img');
 
             if (effect) {
                 resultText.innerText = effect.res;
-                displayImg.src = "assets/media/" + effect.img; // 結果画像に差し替え
+                displayImg.src = "assets/media/" + effect.img;
             } else {
-                resultText.innerText = "何も起きなかった...";
-                // デフォルト画像に戻す
+                resultText.innerText = "その魔法はこの媒体には効果がないようだ...";
                 displayImg.src = "assets/media/" + gameData.media_data[mediaId].default_img;
             }
         }
