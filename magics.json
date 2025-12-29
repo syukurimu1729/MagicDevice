@@ -1,12 +1,22 @@
 {
   "magics": [
     { "id": "Fire", "name": "火の魔法" },
-    { "id": "Water", "name": "水の魔法" }
+    { "id": "Water", "name": "水の魔法" },
+    { "id": "Thunder", "name": "雷の魔法" }
   ],
-  "media_effects": {
+  "media_data": {
     "MDataName1": {
-      "Fire": { "res": "成功！氷が溶けた", "img": "MDataName1_Fire.png" },
-      "Water": { "res": "何も起きない...", "img": "MDataName1.png" }
+      "default_img": "MDataName1.png",
+      "effects": {
+        "Fire": { "res": "氷が溶けて道が開いた！", "img": "MDataName1_Fire.png" },
+        "Water": { "res": "水浸しになっただけだった。", "img": "MDataName1.png" }
+      }
+    },
+    "MDataName2": {
+      "default_img": "MDataName2.png",
+      "effects": {
+        "Thunder": { "res": "機械に電力が供給された！", "img": "MDataName2_Thunder.png" }
+      }
     }
   }
 }
