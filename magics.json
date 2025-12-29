@@ -1,29 +1,16 @@
 {
   "magics": [
-    {
-      "id": "Color",
-      "code": "627369",
-      "name": "色の魔法",
-      "desc": "色を失ったものに使うと本来の色を取り戻す"
-    },
-    {
-      "id": "Connect",
-      "code": "738739",
-      "name": "つなげる魔法",
-      "desc": "重ねたものに使うと、それがつながって離れなくなる"
-    },
-    {
-      "id": "Align",
-      "code": "697657",
-      "name": "そろえる魔法",
-      "desc": "ばらばらになったものに使うときれいにそろう"
-    }
+    { "id": "Color", "code": "627369", "name": "色の魔法", "desc": "色を失ったものに使うと本来の色を取り戻す" },
+    { "id": "Connect", "code": "738739", "name": "つなげる魔法", "desc": "重ねたものに使うと、それがつながって離れなくなる" },
+    { "id": "Align", "code": "697657", "name": "そろえる魔法", "desc": "ばらばらになったものに使うときれいにそろう" },
+    { "id": "Reverse", "code": "000000", "name": "反転の理", "desc": "世界の理を逆転させる。全ての魔法は逆の効果をもたらすだろう。" }
   ],
   "media_data": {
-    "SAMPLE": {
-      "default_img": "sample.png",
+    "MData1": {
+      "default_img": "default.jpg",
       "effects": {
-        "Color": { "res": "鮮やかな色が戻った！", "img": "sample_color.png" }
+        "Color": { "res": "色が戻った！", "img": "color.jpg" },
+        "Color_rev": { "res": "色が吸い取られ、モノクロの世界になった...", "img": "monochrome.jpg" }
       }
     }
   }
