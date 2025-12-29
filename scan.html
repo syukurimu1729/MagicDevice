@@ -91,11 +91,31 @@
             backdrop-filter: blur(8px);
         }
         .modal-content {
-            background: #101025; border: 1px solid var(--accent-red); border-radius: 24px;
-            padding: 35px; width: 100%; max-width: 340px; box-shadow: var(--glow-red);
+            background: #101025; 
+            border: 1px solid var(--accent-red); 
+            border-radius: 24px;
+            padding: 25px; /* 少し減らして余裕を確保 */
+            width: 90%; /* 固定幅をやめ、画面の90%に */
+            max-width: 340px; 
+            box-shadow: var(--glow-red);
+            box-sizing: border-box; /* パディングを含めた幅計算 */
+            text-align: center;
         }
-        .modal-name { font-size: 1.8em; color: var(--accent-red); margin: 10px 0; font-weight: bold; text-shadow: var(--glow-red); }
-        .modal-desc { font-size: 0.95em; line-height: 1.6; margin-bottom: 30px; color: #ccd; }
+        .modal-name { 
+            font-size: 1.5em; /* 少し小さく調整 */
+            color: var(--accent-red); 
+            margin: 10px 0; 
+            font-weight: bold; 
+            text-shadow: var(--glow-red);
+            word-wrap: break-word; /* 魔法名が長くても折る */
+        }
+        .modal-desc { 
+            font-size: 0.9em; 
+            line-height: 1.6; 
+            margin-bottom: 25px; 
+            color: #ccd; 
+            word-wrap: break-word; /* 説明文が長くても折る */
+        }
         .modal-btn {
             background: var(--accent-red); color: white; border: none; padding: 14px;
             border-radius: 10px; font-size: 1.1em; font-weight: bold; width: 100%;

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>魔法の端末</title>
     <style>
         :root {
@@ -21,9 +21,10 @@
             text-align: center; 
             font-family: 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
-            padding: 20px;
+            padding: 15px; /* 少し余裕を持たせる */
             transition: background 0.8s;
             overflow-x: hidden;
+            box-sizing: border-box;
         }
 
         body::before {
@@ -32,77 +33,88 @@
             z-index: -1;
         }
 
-        h1 { font-size: 1.5rem; letter-spacing: 0.2rem; text-shadow: var(--glow-red); color: #fff; margin-bottom: 25px; }
+        h1 { font-size: 1.3rem; letter-spacing: 0.1rem; text-shadow: var(--glow-red); color: #fff; margin: 10px 0 20px; }
 
         .panel { 
             border: 1px solid var(--accent-red); 
             border-radius: 20px; 
-            padding: 20px; 
+            padding: 15px; 
             margin-bottom: 20px; 
             background: var(--panel-bg); 
             backdrop-filter: blur(10px);
             box-shadow: var(--glow-red), inset 0 0 20px rgba(0,0,0,0.5);
             transition: all 0.5s ease;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         #display-img { 
             max-width: 100%; height: auto; border-radius: 12px; 
-            margin: 15px 0; border: 1px solid rgba(255,255,255,0.1); 
+            margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); 
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
             cursor: zoom-in;
-            filter: none !important; 
         }
 
         body.is-reversed { --accent-red: var(--accent-rev); --glow-red: var(--glow-rev); }
 
         /* 反転スイッチ */
         .reverse-container {
-            margin-bottom: 20px; padding: 12px; border-radius: 50px;
-            display: flex; align-items: center; justify-content: center; gap: 15px;
+            margin-bottom: 15px; padding: 10px; border-radius: 50px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
             background: rgba(188, 19, 254, 0.05); border: 1px solid rgba(188, 19, 254, 0.3);
+            width: fit-content; margin-left: auto; margin-right: auto;
         }
-        .reverse-label { font-size: 0.9rem; font-weight: bold; color: var(--accent-rev); text-shadow: 0 0 8px var(--accent-rev); }
+        .reverse-label { font-size: 0.8rem; font-weight: bold; color: var(--accent-rev); text-shadow: 0 0 8px var(--accent-rev); }
 
-        .switch { position: relative; display: inline-block; width: 54px; height: 28px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
             background-color: #222; transition: .4s; border-radius: 34px; border: 1px solid rgba(255,255,255,0.1);
         }
         .slider:before {
-            position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
             background-color: #fff; transition: .4s; border-radius: 50%;
         }
         input:checked + .slider { background-color: rgba(155, 48, 255, 0.4); border-color: var(--accent-rev); }
-        input:checked + .slider:before { transform: translateX(26px); background-color: var(--accent-rev); box-shadow: 0 0 15px var(--accent-rev); }
+        input:checked + .slider:before { transform: translateX(24px); background-color: var(--accent-rev); box-shadow: 0 0 15px var(--accent-rev); }
 
         /* 魔法選択 */
-        .select-wrapper { position: relative; width: 85%; max-width: 320px; margin-bottom: 15px; }
+        .select-wrapper { position: relative; width: 90%; max-width: 300px; margin-bottom: 15px; }
         select { 
             appearance: none; background: rgba(255, 255, 255, 0.05); color: #fff; 
-            border: 1px solid var(--accent-red); padding: 14px 20px; border-radius: 12px; 
+            border: 1px solid var(--accent-red); padding: 12px 15px; border-radius: 12px; 
             font-size: 1rem; width: 100%; cursor: pointer; outline: none; transition: all 0.3s;
+            box-sizing: border-box;
         }
-        .select-wrapper::after { content: "▼"; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--accent-red); font-size: 0.8rem; pointer-events: none; }
+        .select-wrapper::after { content: "▼"; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--accent-red); font-size: 0.7rem; pointer-events: none; }
 
         .btn-cast {
             background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
-            color: white; border: none; padding: 14px 40px; border-radius: 12px; 
-            font-size: 1.1rem; font-weight: bold; width: 85%; max-width: 320px;
+            color: white; border: none; padding: 14px 25px; border-radius: 12px; 
+            font-size: 1rem; font-weight: bold; width: 90%; max-width: 300px;
             box-shadow: var(--glow-red); cursor: pointer; transition: 0.3s;
+            box-sizing: border-box;
+            display: block; margin: 0 auto;
         }
 
         /* URL出現ボタン */
-        #url-action { margin-top: 20px; }
+        #url-action { margin-top: 20px; width: 100%; }
         .btn-url {
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
             text-decoration: none; display: inline-block;
+            width: auto; max-width: 90%; /* 文字数に合わせて幅を変える */
+            padding: 12px 20px;
+            font-size: 0.95rem;
         }
 
-        .btn-scan { text-decoration: none; display: inline-block; margin-top: 30px; color: var(--accent-red); font-size: 0.9rem; font-weight: bold; border-bottom: 1px solid var(--accent-red); padding-bottom: 2px; }
+        .btn-scan { text-decoration: none; display: inline-block; margin: 20px 0; color: var(--accent-red); font-size: 0.9rem; font-weight: bold; border-bottom: 1px solid var(--accent-red); padding-bottom: 2px; }
         
-        #result-text { margin-top: 20px; font-size: 0.95rem; line-height: 1.6; color: #cbd5e0; min-height: 1.5em; }
+        #result-text { 
+            margin-top: 15px; font-size: 0.95rem; line-height: 1.5; color: #cbd5e0; 
+            word-wrap: break-word; overflow-wrap: break-word; /* 長いテキストの折り返し */
+        }
         .hidden { display: none !important; }
 
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
@@ -113,7 +125,7 @@
     <h1>ANOMALY DETECTOR</h1>
 
     <div class="panel">
-        <h2 id="media-title" style="font-size: 0.9rem; opacity: 0.7; letter-spacing: 0.2rem;">SIGNAL LOST</h2>
+        <h2 id="media-title" style="font-size: 0.8rem; opacity: 0.7; letter-spacing: 0.15rem;">SIGNAL LOST</h2>
         <img id="display-img" class="hidden" onclick="openModal()">
         <p id="result-text">周囲をスキャンして解析対象を捉えてください</p>
         
@@ -136,7 +148,7 @@
                 <select id="magic-select"></select>
             </div>
             <button class="btn-cast" onclick="castMagic()">魔法を流し込む</button>
-            <p id="no-magic-msg" class="hidden" style="font-size: 0.8rem; opacity: 0.6;">使用可能な魔法がありません</p>
+            <p id="no-magic-msg" class="hidden" style="font-size: 0.8rem; opacity: 0.6; margin-top: 10px;">使用可能な魔法がありません</p>
         </div>
     </div>
 
@@ -219,14 +231,11 @@
             const urlAction = document.getElementById('url-action');
             const jumpLink = document.getElementById('jump-link');
 
-            // 状態リセット
             urlAction.classList.add('hidden');
 
             if (effect) {
                 resultText.innerText = effect.res;
                 displayImg.src = "assets/media/" + effect.img;
-
-                // URLが設定されていればボタンを表示
                 if (effect.url) {
                     jumpLink.href = effect.url;
                     urlAction.classList.remove('hidden');
