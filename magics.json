@@ -1,21 +1,15 @@
 {
   "magics": [
-    { "id": "Fire", "name": "火の魔法" },
-    { "id": "Water", "name": "水の魔法" },
-    { "id": "Thunder", "name": "雷の魔法" }
+    { "id": "Color", "name": "色の魔法" },
+    { "id": "Connect", "name": "つなげる魔法" },
+    { "id": "Align", "name": "そろえる魔法" }
   ],
   "media_data": {
     "MDataName1": {
       "default_img": "MDataName1.png",
       "effects": {
-        "Fire": { "res": "氷が溶けて道が開いた！", "img": "MDataName1_Fire.png" },
-        "Water": { "res": "水浸しになっただけだった。", "img": "MDataName1.png" }
-      }
-    },
-    "MDataName2": {
-      "default_img": "MDataName2.png",
-      "effects": {
-        "Thunder": { "res": "機械に電力が供給された！", "img": "MDataName2_Thunder.png" }
+        "Color": { "res": "モノクロの世界に色が宿った！", "img": "MDataName1_Color.png" },
+        "Connect": { "res": "離れていた回路がつながった！", "img": "MDataName1_Connect.png" }
       }
     }
   }
