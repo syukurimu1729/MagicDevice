@@ -161,25 +161,36 @@
         }
 
         function handleSuccess(mode, text) {
-            if (mode === 'barcode') {
-                // 魔法習得の処理（以前と同じ）
+        if (mode === 'barcode') {
+            // バーコード番号を魔法IDに変換
+            let magicId = null;
+            if (text === "627369") magicId = "Color";
+            else if (text === "738739") magicId = "Connect";
+            else if (text === "697657") magicId = "Align";
+    
+            if (magicId) {
                 let magics = JSON.parse(localStorage.getItem('myMagics')) || [];
-                if (!magics.includes(text)) {
-                    magics.push(text);
+                if (!magics.includes(magicId)) {
+                    magics.push(magicId);
                     localStorage.setItem('myMagics', JSON.stringify(magics));
+                    alert("新しい魔法を習得しました！");
                 }
             } else {
-                // 媒体読み込みの処理
-                if (text.startsWith("MEDIA:")) {
-                    const mediaId = text.split(":")[1];
-                    localStorage.setItem('currentMedia', mediaId);
-                } else {
-                    alert("これは魔法の媒体ではありません");
-                    return;
-                }
+                alert("このコードには魔法が宿っていないようだ...");
+                return; // 登録外の番号なら戻らない
             }
-            location.href = "index.html";
+        } else {
+            // 媒体読み込み（以前と同じ）
+            if (text.startsWith("MEDIA:")) {
+                const mediaId = text.split(":")[1];
+                localStorage.setItem('currentMedia', mediaId);
+            } else {
+                alert("有効な媒体ではありません");
+                return;
+            }
         }
+        location.href = "index.html";
+    }
 
         window.onload = () => startScanner('barcode');
     </script>
