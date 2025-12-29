@@ -14,11 +14,8 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* 全体フェードイン */
         @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
-        /* 解析成功時のフラッシュ */
         @keyframes successFlash { 0% { background: transparent; } 50% { background: rgba(0, 255, 204, 0.2); } 100% { background: transparent; } }
-        /* モーダル出現 */
         @keyframes modalUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         body {
@@ -36,7 +33,6 @@
         #reader { width: 100% !important; max-width: 500px; border: none !important; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
-        /* 解析成功時のエフェクト用レイヤー */
         #flash-layer { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 150; }
 
         .hud-corner {
@@ -187,19 +183,39 @@
             qrShutter.style.display = (mode === 'qr' ? 'block' : 'none');
             barcodeLine.style.display = (mode === 'barcode' ? 'block' : 'none');
             
-            statusMsg.innerText = "コードを探索中...";
+            statusMsg.innerText = mode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
             statusMsg.style.color = "#888";
 
+            // フォーマット指定用設定
+            // barcodeモードの時は1次元バーコードのみ、qrモードの時はQRコードのみに制限
+            const formats = (mode === 'qr') 
+                ? [ Html5QrcodeSupportedFormats.QR_CODE ] 
+                : [ 
+                    Html5QrcodeSupportedFormats.EAN_13, 
+                    Html5QrcodeSupportedFormats.EAN_8, 
+                    Html5QrcodeSupportedFormats.CODE_128, 
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E
+                  ];
+
             html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 20 }, (text) => {
-                if (isErrorState) return; 
-                if (lastResult !== text) {
-                    lastResult = text;
-                    statusMsg.innerText = "解析準備完了";
-                    statusMsg.style.color = "#00ffcc";
-                    statusMsg.style.textShadow = "0 0 10px rgba(0,255,204,0.5)";
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { 
+                    fps: 20,
+                    formatsToSupport: formats // ここで読み取り対象を制限
+                }, 
+                (text) => {
+                    if (isErrorState) return; 
+                    if (lastResult !== text) {
+                        lastResult = text;
+                        statusMsg.innerText = "解析準備完了";
+                        statusMsg.style.color = "#00ffcc";
+                        statusMsg.style.textShadow = "0 0 10px rgba(0,255,204,0.5)";
+                    }
                 }
-            }).catch(err => {
+            ).catch(err => {
                 statusMsg.innerText = "カメラを起動できません";
             });
         }
@@ -219,7 +235,7 @@
                     statusMsg.innerText = "解析準備完了";
                     statusMsg.style.color = "#00ffcc";
                 } else {
-                    statusMsg.innerText = "コードを探索中...";
+                    statusMsg.innerText = currentMode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
                     statusMsg.style.color = "#888";
                 }
             }, 2000);
@@ -227,7 +243,6 @@
 
         function pressScan() {
             if (lastResult) {
-                // 成功時の視覚エフェクト
                 const flash = document.getElementById('flash-layer');
                 flash.style.animation = 'none';
                 void flash.offsetWidth;
