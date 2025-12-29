@@ -3,49 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>魔法の端末 - メイン</title>
+    <title>魔法の端末 - Test</title>
     <style>
-        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; }
-        .panel { border: 2px solid #e94560; border-radius: 15px; padding: 15px; margin-bottom: 20px; background: rgba(22, 33, 62, 0.8); }
-        h2 { color: #e94560; font-size: 1.2em; border-bottom: 1px solid #e94560; padding-bottom: 5px; }
-        .magic-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
-        .magic-item { background: #0f3460; padding: 10px; border-radius: 8px; border: 1px solid #533483; min-width: 80px; }
-        .btn-scan { background: #e94560; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 1em; text-decoration: none; display: inline-block; margin-top: 20px; box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); }
+        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; }
+        .panel { border: 2px solid #e94560; padding: 15px; margin: 10px; border-radius: 10px; }
+        .hidden { display: none; }
+        #display-img { max-width: 80%; border-radius: 10px; margin-top: 10px; }
+        select, button { padding: 10px; margin: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
-    <h1>魔法の端末!</h1>
+    <h1>魔法の端末</h1>
 
     <div class="panel">
-        <h2>現在接続中の媒体</h2>
-        <div id="current-media">未接続</div>
+        <h3>媒体接続状態</h3>
+        <input type="text" id="manual-qr" placeholder="MEDIA:MDataName1">
+        <button onclick="testScan()">QR読み込み(テスト)</button>
+        <div id="current-media-id">未接続</div>
+        <img id="display-img" class="hidden">
     </div>
 
-    <div class="panel">
-        <h2>習得済み魔法</h2>
-        <div id="magic-inventory" class="magic-list">
-            <p style="color: #666;">（まだ魔法がありません）</p>
-        </div>
+    <div id="action-panel" class="panel hidden">
+        <h3>魔法選択</h3>
+        <select id="magic-select">
+            <option value="Fire">火の魔法</option>
+            <option value="Water">水の魔法</option>
+        </select>
+        <button onclick="castMagic()">魔法を使用</button>
     </div>
 
-    <a href="scan.html" class="btn-scan">読み取りモード起動</a>
+    <div id="result-panel" class="panel hidden">
+        <h3>結果</h3>
+        <p id="result-text"></p>
+    </div>
 
     <script>
-        // ページ読み込み時に保存されたデータを表示
-        window.onload = () => {
-            const magics = JSON.parse(localStorage.getItem('myMagics')) || [];
-            const inventory = document.getElementById('magic-inventory');
-            if (magics.length > 0) inventory.innerHTML = "";
-            magics.forEach(m => {
-                const div = document.createElement('div');
-                div.className = 'magic-item';
-                div.innerText = m;
-                inventory.appendChild(div);
-            });
-
-            const media = localStorage.getItem('currentMedia') || "未接続";
-            document.getElementById('current-media').innerText = media;
+        // 擬似データ（本来はJSONから読み込む）
+        const gameData = {
+            "media_effects": {
+                "MDataName1": {
+                    "Fire": { "res": "氷の壁が溶け、道が現れた！", "img": "MDataName1_Fire.png" },
+                    "Water": { "res": "水浸しになっただけだった。", "img": "MDataName1.png" }
+                }
+            }
         };
+
+        function testScan() {
+            const val = document.getElementById('manual-qr').value;
+            if (val.startsWith("MEDIA:")) {
+                const mediaId = val.split(":")[1];
+                localStorage.setItem('currentMedia', mediaId);
+                updateUI();
+            } else {
+                alert("無効な形式です");
+            }
+        }
+
+        function updateUI() {
+            const mediaId = localStorage.getItem('currentMedia');
+            if (mediaId) {
+                document.getElementById('current-media-id').innerText = "接続中: " + mediaId;
+                document.getElementById('action-panel').classList.remove('hidden');
+                
+                // 画像を表示（リポジトリのパスに合わせて調整）
+                const img = document.getElementById('display-img');
+                img.src = `assets/media/${mediaId}.png`; 
+                img.classList.remove('hidden');
+            }
+        }
+
+        function castMagic() {
+            const mediaId = localStorage.getItem('currentMedia');
+            const magicId = document.getElementById('magic-select').value;
+            const resultPanel = document.getElementById('result-panel');
+            const resultText = document.getElementById('result-text');
+            const img = document.getElementById('display-img');
+
+            if (gameData.media_effects[mediaId] && gameData.media_effects[mediaId][magicId]) {
+                const effect = gameData.media_effects[mediaId][magicId];
+                resultText.innerText = effect.res;
+                img.src = `assets/media/${effect.img}`; // 結果画像に差し替え
+            } else {
+                resultText.innerText = "何も起きなかった...";
+            }
+            resultPanel.classList.remove('hidden');
+        }
+
+        window.onload = updateUI;
     </script>
 </body>
 </html>
