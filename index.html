@@ -5,49 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>魔法の端末</title>
     <style>
-        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; }
-        .panel { border: 2px solid #e94560; border-radius: 15px; padding: 15px; margin-bottom: 20px; background: rgba(22, 33, 62, 0.8); }
-        
-        /* 画像のスタイル：クリックできることを示すためカーソルを変更 */
-        #display-img { 
-            max-width: 100%; 
-            height: auto; 
-            border-radius: 10px; 
-            margin: 15px 0; 
-            border: 1px solid #444; 
-            cursor: zoom-in;
-            transition: transform 0.2s;
+        :root {
+            --bg-color: #1a1a2e;
+            --panel-color: rgba(22, 33, 62, 0.8);
+            --accent-red: #e94560;
+            --accent-rev: #9b30ff; /* 反転時の紫 */
         }
-        #display-img:active { transform: scale(0.98); }
 
-        /* 拡大表示用のオーバーレイ（モーダル） */
-        #image-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            cursor: zoom-out;
+        body { 
+            background: var(--bg-color); 
+            color: white; 
+            text-align: center; 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            transition: background 0.5s, filter 0.5s;
         }
-        #overlay-img {
-            max-width: 95%;
-            max-height: 95%;
-            object-fit: contain;
-            border-radius: 5px;
-            box-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+
+        /* 反転状態のスタイル */
+        body.is-reversed {
+            --accent-red: var(--accent-rev);
+            background: #0d001a;
+            filter: hue-rotate(180deg) brightness(1.2); /* 全体の色相を回して異界感を出す */
+        }
+
+        .panel { 
+            border: 2px solid var(--accent-red); 
+            border-radius: 15px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            background: var(--panel-color); 
+            transition: border-color 0.5s;
+        }
+
+        #display-img { 
+            max-width: 100%; height: auto; border-radius: 10px; 
+            margin: 15px 0; border: 1px solid #444; cursor: zoom-in;
         }
         
-        /* 魔法選択エリア */
+        /* 反転スイッチのスタイル */
+        .reverse-container {
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px dashed var(--accent-rev);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: rgba(155, 48, 255, 0.1);
+        }
+        .reverse-label { font-weight: bold; color: var(--accent-rev); text-shadow: 0 0 5px black; }
+
+        .switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #444; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-rev); box-shadow: 0 0 10px var(--accent-rev); }
+        input:checked + .slider:before { transform: translateX(30px); }
+
         .magic-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
         select, button { 
-            background: #0f3460; color: white; border: 1px solid #e94560; 
+            background: #0f3460; color: white; border: 1px solid var(--accent-red); 
             padding: 12px; border-radius: 8px; font-size: 1em; width: 80%; max-width: 300px;
+            transition: border-color 0.5s;
         }
         
-        .btn-scan { background: #e94560; text-decoration: none; display: inline-block; margin-top: 20px; padding: 12px 24px; border-radius: 8px; color: white; font-weight: bold; }
+        .btn-scan { background: var(--accent-red); text-decoration: none; display: inline-block; margin-top: 20px; padding: 12px 24px; border-radius: 8px; color: white; font-weight: bold; transition: background 0.5s; }
         .hidden { display: none !important; }
+
+        /* 拡大モーダル */
+        #image-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center;
+        }
+        #overlay-img { max-width: 95%; max-height: 95%; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -60,6 +98,14 @@
     </div>
 
     <div id="action-ui" class="panel hidden">
+        <div id="reverse-ui" class="reverse-container hidden">
+            <span class="reverse-label">反転の理</span>
+            <label class="switch">
+                <input type="checkbox" id="reverse-switch" onchange="toggleReverseMode()">
+                <span class="slider"></span>
+            </label>
+        </div>
+
         <div class="magic-controls">
             <select id="magic-select"></select>
             <button onclick="castMagic()">魔法を発動する</button>
@@ -81,25 +127,16 @@
                 const res = await fetch('magics.json');
                 gameData = await res.json();
                 updateUI();
-            } catch (e) {
-                console.error("データの読み込みに失敗しました");
-            }
+            } catch (e) { console.error("データの読み込み失敗"); }
         }
 
-        // 拡大機能
-        function openModal() {
-            const displayImg = document.getElementById('display-img');
-            const overlay = document.getElementById('image-overlay');
-            const overlayImg = document.getElementById('overlay-img');
-            
-            if (displayImg.src) {
-                overlayImg.src = displayImg.src;
-                overlay.style.display = 'flex';
+        function toggleReverseMode() {
+            const isReverse = document.getElementById('reverse-switch').checked;
+            if (isReverse) {
+                document.body.classList.add('is-reversed');
+            } else {
+                document.body.classList.remove('is-reversed');
             }
-        }
-
-        function closeModal() {
-            document.getElementById('image-overlay').style.display = 'none';
         }
 
         function updateUI() {
@@ -111,6 +148,7 @@
             const actionUi = document.getElementById('action-ui');
             const select = document.getElementById('magic-select');
             const noMagicMsg = document.getElementById('no-magic-msg');
+            const reverseUi = document.getElementById('reverse-ui');
 
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
@@ -119,11 +157,11 @@
                 displayImg.classList.remove('hidden');
                 actionUi.classList.remove('hidden');
 
+                // 魔法リスト（Reverse以外を表示）
                 select.innerHTML = "";
                 let hasMagic = false;
-
                 gameData.magics.forEach(m => {
-                    if (myMagics.includes(m.id)) {
+                    if (myMagics.includes(m.id) && m.id !== 'Reverse') {
                         const opt = document.createElement('option');
                         opt.value = m.id;
                         opt.innerText = m.name;
@@ -139,15 +177,23 @@
                     select.classList.add('hidden');
                     noMagicMsg.classList.remove('hidden');
                 }
+
+                // 反転魔法を持っているかチェック
+                if (myMagics.includes('Reverse')) {
+                    reverseUi.classList.remove('hidden');
+                }
             }
         }
 
         function castMagic() {
             const mediaId = localStorage.getItem('currentMedia');
             const magicId = document.getElementById('magic-select').value;
+            const isReverse = document.getElementById('reverse-switch').checked;
             if (!magicId) return;
 
-            const effect = gameData.media_data[mediaId].effects[magicId];
+            // 反転時は ID_rev を探す
+            const targetKey = isReverse ? magicId + "_rev" : magicId;
+            const effect = gameData.media_data[mediaId].effects[targetKey];
             const resultText = document.getElementById('result-text');
             const displayImg = document.getElementById('display-img');
 
@@ -155,10 +201,21 @@
                 resultText.innerText = effect.res;
                 displayImg.src = "assets/media/" + effect.img;
             } else {
-                resultText.innerText = "その魔法はこの媒体には効果がないようだ...";
-                displayImg.src = "assets/media/" + gameData.media_data[mediaId].default_img;
+                resultText.innerText = isReverse ? "反転の理を以てしても、何も起きないようだ..." : "その魔法はこの媒体には効果がないようだ...";
             }
         }
+
+        function openModal() {
+            const displayImg = document.getElementById('display-img');
+            const overlay = document.getElementById('image-overlay');
+            const overlayImg = document.getElementById('overlay-img');
+            if (displayImg.src) {
+                overlayImg.src = displayImg.src;
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function closeModal() { document.getElementById('image-overlay').style.display = 'none'; }
 
         window.onload = init;
     </script>
