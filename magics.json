@@ -21,9 +21,9 @@
   ],
   "media_data": {
     "SAMPLE": {
-      "default_img": "sample.jpg",
+      "default_img": "sample.png",
       "effects": {
-        "Color": { "res": "鮮やかな色が戻った！", "img": "sample_color.jpg" }
+        "Color": { "res": "鮮やかな色が戻った！", "img": "sample_color.png" }
       }
     }
   }
