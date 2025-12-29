@@ -7,7 +7,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
-            --panel-height: 160px; /* 下部パネルの高さ */
+            --panel-height: 160px;
             --magic-red: #e94560;
         }
         body {
@@ -16,102 +16,108 @@
             text-align: center;
             font-family: sans-serif;
             margin: 0;
-            padding: 0;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* カメラ表示エリア：下部パネルを除いた全画面 */
+        /* カメラエリアを画面上部に固定 */
         #reader-wrapper {
-            flex: 1;
             position: relative;
+            flex: 1; /* パネル以外の残り全域 */
             width: 100%;
+            overflow: hidden;
             background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
+        /* ライブラリのビデオ要素を画面いっぱいに */
         #reader {
             width: 100% !important;
             height: 100% !important;
             border: none !important;
         }
-
-        /* ライブラリが勝手に作るビデオ要素の調整 */
         #reader video {
-            object-fit: cover !important; /* 画面いっぱいに広げる */
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important; /* 余白を消す */
         }
 
-        /* 内部のガイド枠（シャドウ）のスタイル上書き */
-        #reader__scan_region {
-            border: none !important;
-        }
-
-        /* バーコード用の赤い線 */
-        #scan-line {
+        /* 自前のQRガイド枠（正方形） */
+        #qr-shutter {
+            display: none;
             position: absolute;
             top: 50%;
-            left: 15%;
-            width: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 2px solid var(--magic-red);
+            box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); /* 周囲を暗くする */
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        /* 自前のバーコード用スキャン線 */
+        #barcode-line {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            width: 80%;
             height: 2px;
             background: red;
             box-shadow: 0 0 10px red;
-            z-index: 50;
-            display: none;
-            pointer-events: none;
+            z-index: 20;
             transform: translateY(-50%);
+            pointer-events: none;
         }
 
         /* 下部操作パネル */
         .controls {
             height: var(--panel-height);
             background: #1a1a2e;
-            border-top: 3px solid var(--magic-red);
+            border-top: 2px solid var(--magic-red);
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: center;
             z-index: 100;
-            padding-bottom: env(safe-area-inset-bottom); /* iPhoneのバー対策 */
         }
 
-        .btn-group { display: flex; gap: 15px; margin-bottom: 10px; }
-        
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
         button {
-            background: #16213e;
+            background: transparent;
             color: white;
             border: 1px solid var(--magic-red);
             padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 0.9em;
+            border-radius: 5px;
+            min-width: 120px;
         }
+        button.active { background: var(--magic-red); font-weight: bold; }
+        .status-text { font-size: 0.8em; margin-bottom: 8px; color: #ccc; }
+        .back-link { color: #888; text-decoration: none; font-size: 0.8em; }
 
-        button.active {
-            background: var(--magic-red);
-            font-weight: bold;
+        /* ライブラリが自動生成する不要な枠を隠す */
+        #reader__dashboard, #reader__scan_region img {
+            display: none !important;
         }
-
-        .status-text { font-size: 0.8em; margin-bottom: 10px; color: #ccc; }
-        .back-link { color: #888; text-decoration: none; font-size: 0.8em; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div id="reader-wrapper">
         <div id="reader"></div>
-        <div id="scan-line"></div>
+        <div id="qr-shutter"></div>
+        <div id="barcode-line"></div>
     </div>
 
     <div class="controls">
-        <div id="status-msg" class="status-text">モードを選択してください</div>
+        <div id="status-msg" class="status-text">読み取り中...</div>
         <div class="btn-group">
             <button id="btn-barcode" onclick="startScanner('barcode')">魔法コード</button>
             <button id="btn-qr" onclick="startScanner('qr')">媒体読み込み</button>
         </div>
-        <a href="index.html" class="back-link">端末画面に戻る!</a>
+        <a href="index.html" class="back-link">端末に戻る</a>
     </div>
 
     <script>
@@ -119,50 +125,38 @@
 
         async function startScanner(mode) {
             const statusMsg = document.getElementById('status-msg');
-            const scanLine = document.getElementById('scan-line');
+            const qrShutter = document.getElementById('qr-shutter');
+            const barcodeLine = document.getElementById('barcode-line');
 
-            // 1. 既存のスキャナーを完全に破棄してリセット
-            if (html5QrCode) {
-                await html5QrCode.stop().catch(() => {});
-                html5QrCode.clear(); // 描画された枠などを消去
+            if (html5QrCode && html5QrCode.isScanning) {
+                await html5QrCode.stop();
             }
 
-            // 2. ボタン状態の更新
             document.getElementById('btn-barcode').className = (mode === 'barcode' ? 'active' : '');
             document.getElementById('btn-qr').className = (mode === 'qr' ? 'active' : '');
 
-            // 3. モード別設定
             let formats;
-            let qrboxSize;
             if (mode === 'barcode') {
                 formats = [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13];
-                qrboxSize = { width: 300, height: 120 };
-                scanLine.style.display = 'block';
-                statusMsg.innerText = "バーコード（魔法）を赤い線に合わせてください";
+                qrShutter.style.display = 'none';
+                barcodeLine.style.display = 'block';
+                statusMsg.innerText = "魔法コード（バーコード）をスキャンしてください";
             } else {
                 formats = [Html5QrcodeSupportedFormats.QR_CODE];
-                qrboxSize = { width: 250, height: 250 };
-                scanLine.style.display = 'none';
-                statusMsg.innerText = "QRコード（媒体）を枠に収めてください";
+                qrShutter.style.display = 'block';
+                barcodeLine.style.display = 'none';
+                statusMsg.innerText = "媒体（QRコード）を枠内に収めてください";
             }
 
-            // 4. スキャナーの初期化
             html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
 
-            const config = {
-                fps: 15,
-                qrbox: qrboxSize,
-                aspectRatio: 1.0 // 正方形に近いプレビューを維持
-            };
+            // qrboxをnullにすることでライブラリ側の枠描画を無効化（自前で描画するため）
+            const config = { fps: 15, qrbox: null };
 
-            html5QrCode.start(
-                { facingMode: "environment" },
-                config,
-                (decodedText) => {
-                    handleSuccess(mode, decodedText);
-                }
-            ).catch(err => {
-                statusMsg.innerText = "エラー: " + err;
+            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                handleSuccess(mode, text);
+            }).catch(err => {
+                statusMsg.innerText = "カメラ起動失敗";
             });
         }
 
@@ -176,14 +170,9 @@
             } else {
                 localStorage.setItem('currentMedia', text);
             }
-            // 成功演出として少し待ってから戻る
-            document.getElementById('status-msg').innerText = "読み込み完了！";
-            setTimeout(() => {
-                location.href = "index.html";
-            }, 500);
+            location.href = "index.html";
         }
 
-        // ページ読み込み時にバーコードモードで開始
         window.onload = () => startScanner('barcode');
     </script>
 </body>
