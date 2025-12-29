@@ -14,13 +14,20 @@
         
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        /* 全体フェードイン */
+        @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+        /* 解析成功時のフラッシュ */
+        @keyframes successFlash { 0% { background: transparent; } 50% { background: rgba(0, 255, 204, 0.2); } 100% { background: transparent; } }
+        /* モーダル出現 */
+        @keyframes modalUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         body {
             background: #000; color: #e0e0ff; font-family: 'Segoe UI', sans-serif;
             height: 100vh; display: flex; flex-direction: column; align-items: center;
             overflow: hidden; width: 100%;
+            animation: pageIn 0.5s ease-out;
         }
 
-        /* カメラエリア */
         #reader-wrapper { 
             position: relative; flex: 1; width: 100%; 
             display: flex; justify-content: center; align-items: center; overflow: hidden;
@@ -29,18 +36,20 @@
         #reader { width: 100% !important; max-width: 500px; border: none !important; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
-        /* HUD装飾（四隅） */
+        /* 解析成功時のエフェクト用レイヤー */
+        #flash-layer { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 150; }
+
         .hud-corner {
             position: absolute; width: 30px; height: 30px;
             border: 2px solid var(--accent-red); z-index: 105;
             filter: drop-shadow(var(--glow-red)); pointer-events: none;
+            transition: all 0.3s ease;
         }
         .top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
         .top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
         .bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
         .bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
 
-        /* QR用ガイド枠 */
         #qr-shutter {
             display: none; position: absolute; top: 50%; left: 50%; width: 220px; height: 220px;
             border: 1px solid rgba(255, 45, 85, 0.5); 
@@ -48,9 +57,9 @@
             transform: translate(-50%, -50%); z-index: 100;
             box-shadow: inset 0 0 20px rgba(255, 45, 85, 0.2);
             pointer-events: none;
+            transition: 0.3s ease;
         }
 
-        /* バーコード用スキャン線 */
         #barcode-line {
             display: none; position: absolute; top: 50%; left: 10%; width: 80%; height: 2px;
             background: var(--accent-red); box-shadow: var(--glow-red);
@@ -62,16 +71,16 @@
             50% { transform: translateY(40px); opacity: 1; }
         }
 
-        /* 操作パネル */
         .controls {
             flex-shrink: 0; padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
             width: 100%; background: var(--bg-dark); border-top: 1px solid var(--accent-red);
             display: flex; flex-direction: column; align-items: center; z-index: 200;
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.5);
         }
 
         #status-msg {
             font-size: 0.75rem; margin-bottom: 8px; color: #888;
-            transition: color 0.3s ease; letter-spacing: 0.1rem;
+            transition: all 0.3s ease; letter-spacing: 0.1rem;
         }
 
         #scan-trigger {
@@ -80,7 +89,9 @@
             font-weight: bold; width: 85%; max-width: 400px; margin-bottom: 15px; 
             box-shadow: var(--glow-red); cursor: pointer;
             font-size: clamp(0.8rem, 4vw, 1.2rem); white-space: nowrap;
+            transition: transform 0.1s, filter 0.3s;
         }
+        #scan-trigger:active { transform: scale(0.96); filter: brightness(0.9); }
 
         .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; width: 100%; }
         .mode-btn {
@@ -89,28 +100,32 @@
         }
         .mode-btn.active { color: white; border-color: var(--accent-red); background: rgba(255, 45, 85, 0.2); box-shadow: var(--glow-red); }
 
-        /* モーダル */
         #result-modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 1000;
             justify-content: center; align-items: center; 
+            backdrop-filter: blur(4px);
         }
         .modal-content {
             background: #101025; border: 1px solid var(--accent-red); border-radius: 24px;
             padding: 25px; width: 85%; max-width: 320px; box-shadow: var(--glow-red); text-align: center;
+            animation: modalUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
         }
         .modal-name { 
             color: var(--accent-red); margin: 10px 0; font-weight: bold; 
             font-size: clamp(1rem, 5vw, 1.5rem); text-shadow: var(--glow-red);
         }
 
-        .back-link { color: #555; text-decoration: none; font-size: 0.8rem; margin-top: 5px; }
+        .back-link { color: #555; text-decoration: none; font-size: 0.8rem; margin-top: 5px; transition: 0.3s; }
+        .back-link:hover { color: #888; }
+        
         #reader__dashboard { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="reader-wrapper">
+        <div id="flash-layer"></div>
         <div class="hud-corner top-left"></div>
         <div class="hud-corner top-right"></div>
         <div class="hud-corner bottom-left"></div>
@@ -178,22 +193,25 @@
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 20 }, (text) => {
                 if (isErrorState) return; 
-                lastResult = text;
-                statusMsg.innerText = "解析準備完了";
-                statusMsg.style.color = "#00ffcc";
+                if (lastResult !== text) {
+                    lastResult = text;
+                    statusMsg.innerText = "解析準備完了";
+                    statusMsg.style.color = "#00ffcc";
+                    statusMsg.style.textShadow = "0 0 10px rgba(0,255,204,0.5)";
+                }
             }).catch(err => {
                 statusMsg.innerText = "カメラを起動できません";
             });
         }
 
-        // エラーを表示する共通関数
         function showScanError() {
             if (isErrorState) return;
             const statusMsg = document.getElementById('status-msg');
             isErrorState = true;
             
             statusMsg.innerText = "解析に失敗しました";
-            statusMsg.style.color = "#ff2d55"; // 直接カラーコードを指定
+            statusMsg.style.color = "#ff2d55";
+            statusMsg.style.textShadow = "none";
 
             setTimeout(() => {
                 isErrorState = false;
@@ -209,6 +227,12 @@
 
         function pressScan() {
             if (lastResult) {
+                // 成功時の視覚エフェクト
+                const flash = document.getElementById('flash-layer');
+                flash.style.animation = 'none';
+                void flash.offsetWidth;
+                flash.style.animation = 'successFlash 0.4s ease-out';
+                
                 handleSuccess(currentMode, lastResult);
             } else {
                 showScanError();
