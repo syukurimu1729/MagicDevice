@@ -1,0 +1,12 @@
+{
+  "magics": [
+    { "id": "Fire", "name": "火の魔法" },
+    { "id": "Water", "name": "水の魔法" }
+  ],
+  "media_effects": {
+    "MDataName1": {
+      "Fire": { "res": "成功！氷が溶けた", "img": "MDataName1_Fire.png" },
+      "Water": { "res": "何も起きない...", "img": "MDataName1.png" }
+    }
+  }
+}
