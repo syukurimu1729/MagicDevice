@@ -1,15 +1,29 @@
 {
   "magics": [
-    { "id": "Color", "name": "色の魔法" },
-    { "id": "Connect", "name": "つなげる魔法" },
-    { "id": "Align", "name": "そろえる魔法" }
+    {
+      "id": "Color",
+      "code": "627369",
+      "name": "色の魔法",
+      "desc": "色を失ったものに使うと本来の色を取り戻す"
+    },
+    {
+      "id": "Connect",
+      "code": "738739",
+      "name": "つなげる魔法",
+      "desc": "重ねたものに使うと、それがつながって離れなくなる"
+    },
+    {
+      "id": "Align",
+      "code": "697657",
+      "name": "そろえる魔法",
+      "desc": "ばらばらになったものに使うときれいにそろう"
+    }
   ],
   "media_data": {
-    "MDataName1": {
-      "default_img": "MDataName1.png",
+    "SAMPLE": {
+      "default_img": "sample.jpg",
       "effects": {
-        "Color": { "res": "モノクロの世界に色が宿った！", "img": "MDataName1_Color.png" },
-        "Connect": { "res": "離れていた回路がつながった！", "img": "MDataName1_Connect.png" }
+        "Color": { "res": "鮮やかな色が戻った！", "img": "sample_color.jpg" }
       }
     }
   }
