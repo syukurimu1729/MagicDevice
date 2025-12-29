@@ -2,12 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>魔法スキャナー</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
-            --panel-height: 220px; /* パネルを少し高くしてボタンを上に */
+            --panel-height: 160px;
             --magic-red: #e94560;
         }
         body {
@@ -20,7 +20,6 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            padding-bottom: env(safe-area-inset-bottom);
         }
 
         #reader-wrapper {
@@ -30,68 +29,76 @@
             background: #000;
         }
 
-        #reader { width: 100% !important; height: 100% !important; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+        #reader {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
 
-        /* ガイド線・枠 */
+        /* 赤いスキャン線（中央に配置） */
         #barcode-line {
             display: none;
             position: absolute;
-            top: 50%; left: 5%; width: 90%; height: 2px;
-            background: red; box-shadow: 0 0 10px red;
-            z-index: 100; transform: translateY(-50%);
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 2px;
+            background: red;
+            box-shadow: 0 0 10px red;
+            z-index: 100;
+            transform: translateY(-50%);
+            pointer-events: none;
         }
+
+        /* QR用の角枠（中央に配置） */
         #qr-shutter {
             display: none;
             position: absolute;
-            top: 50%; left: 50%; width: 220px; height: 220px;
+            top: 50%;
+            left: 50%;
+            width: 250px;
+            height: 250px;
             border: 2px solid var(--magic-red);
             transform: translate(-50%, -50%);
             z-index: 100;
+            pointer-events: none;
         }
 
-        /* 下部パネル */
         .controls {
-            padding-top: 20px; /* 上部に余白を作ってボタンを中央寄りに */
-            height: calc(var(--panel-height) + env(safe-area-inset-bottom));
+            height: var(--panel-height);
             background: #1a1a2e;
             border-top: 2px solid var(--magic-red);
             display: flex;
             flex-direction: column;
-            align-items: center;
-            z-index: 200;
+            justify-content: center;
+            z-index: 110;
         }
 
-        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        
-        .mode-btn {
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        button {
             background: transparent;
-            color: #888;
-            border: 1px solid #444;
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.75em;
-        }
-        .mode-btn.active { color: white; border-color: var(--magic-red); background: rgba(233, 69, 96, 0.2); }
-
-        /* スキャンボタンを押しやすい位置に */
-        #scan-trigger {
-            background: var(--magic-red);
             color: white;
-            border: none;
-            padding: 18px 0;
-            border-radius: 10px;
-            font-size: 1.3em;
-            font-weight: bold;
-            width: 85%;
-            margin-bottom: 15px;
+            border: 1px solid var(--magic-red);
+            padding: 12px 20px;
+            border-radius: 5px;
+            min-width: 120px;
         }
-        #scan-trigger:active { background: #c62842; transform: translateY(2px); }
+        button.active { background: var(--magic-red); font-weight: bold; }
+        .status-text { font-size: 0.8em; margin-bottom: 8px; color: #ccc; }
+        .back-link { color: #888; text-decoration: none; font-size: 0.8em; }
 
-        .status-text { font-size: 0.85em; margin-bottom: 10px; color: #fff; font-weight: bold; }
-        .back-link { color: #aaa; font-size: 0.9em; padding: 10px; }
-
-        #reader__dashboard { display: none !important; }
+        /* 不要なライブラリUIを徹底的に隠す */
+        #reader__dashboard, #reader__scan_region {
+            border: none !important;
+        }
+        #reader__scan_region img, #reader__scan_region div {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -103,94 +110,62 @@
     </div>
 
     <div class="controls">
-        <div id="status-msg" class="status-text">カメラ準備中...</div>
-        
-        <button id="scan-trigger" onclick="executeScan()">解析を実行する</button>
-
+        <div id="status-msg" class="status-text">スキャン準備中...</div>
         <div class="btn-group">
-            <button id="btn-barcode" class="mode-btn" onclick="switchMode('barcode')">魔法習得</button>
-            <button id="btn-qr" class="mode-btn" onclick="switchMode('qr')">媒体接続</button>
+            <button id="btn-barcode" onclick="startScanner('barcode')">魔法コード</button>
+            <button id="btn-qr" onclick="startScanner('qr')">媒体読み込み</button>
         </div>
-
-        <a href="index.html" class="back-link">キャンセルして戻る</a>
+        <a href="index.html" class="back-link">端末に戻る</a>
     </div>
 
     <script>
         let html5QrCode;
-        let currentMode = 'barcode';
 
-        async function initCamera() {
-            // ライブラリの内部的な成功判定を使わずに、ボタン押下時のみ判定する
-            html5QrCode = new Html5Qrcode("reader");
-            const config = { fps: 20, qrbox: undefined };
-            
-            try {
-                await html5QrCode.start({ facingMode: "environment" }, config, () => {
-                    // ここでは何もしない（ボタンが押されるまで無視）
-                });
-                switchMode('barcode');
-            } catch (err) {
-                document.getElementById('status-msg').innerText = "カメラの起動に失敗しました";
-            }
-        }
-
-        function switchMode(mode) {
-            currentMode = mode;
+        async function startScanner(mode) {
             const statusMsg = document.getElementById('status-msg');
             const qrShutter = document.getElementById('qr-shutter');
             const barcodeLine = document.getElementById('barcode-line');
 
-            document.getElementById('btn-barcode').classList.toggle('active', mode === 'barcode');
-            document.getElementById('btn-qr').classList.toggle('active', mode === 'qr');
+            if (html5QrCode) {
+                await html5QrCode.stop().catch(()=>{});
+                html5QrCode.clear();
+            }
 
+            document.getElementById('btn-barcode').className = (mode === 'barcode' ? 'active' : '');
+            document.getElementById('btn-qr').className = (mode === 'qr' ? 'active' : '');
+
+            let formats;
             if (mode === 'barcode') {
+                formats = [Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_128];
                 qrShutter.style.display = 'none';
                 barcodeLine.style.display = 'block';
-                statusMsg.innerText = "バーコードを赤線に合わせてください";
+                statusMsg.innerText = "バーコードを赤い線に合わせてください";
             } else {
+                formats = [Html5QrcodeSupportedFormats.QR_CODE];
                 qrShutter.style.display = 'block';
                 barcodeLine.style.display = 'none';
-                statusMsg.innerText = "QRを枠内に収めてください";
+                statusMsg.innerText = "QRコードを枠に収めてください";
             }
-        }
 
-        async function executeScan() {
-            const statusMsg = document.getElementById('status-msg');
-            statusMsg.innerText = "解析中...";
+            html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
 
-            // video要素から現在の画像を取得して解析を試みる
-            // ライブスキャン中に「現在の静止画をスキャンする」最も確実な方法
-            const videoElement = document.querySelector('#reader video');
-            
-            try {
-                // html5QrCodeのインスタンスを使って、現在のビデオフレームをスキャン
-                // scanFileを使わずに、ビデオ要素そのものを渡すことで成功率を上げます
-                const result = await html5QrCode.scanFile(await takeSnapshot(), false);
-                handleSuccess(currentMode, result);
-            } catch (err) {
-                statusMsg.innerText = "失敗：コードが見つかりません";
-                console.log(err);
-            }
-        }
+            const config = { 
+                fps: 25, 
+                // qrboxをあえて設定せず、画面全体をスキャン対象にする
+                qrbox: undefined 
+            };
 
-        async function takeSnapshot() {
-            const video = document.querySelector('#reader video');
-            const canvas = document.createElement('canvas');
-            // 解像度を落とさずにキャプチャ
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            
-            return new Promise(resolve => {
-                canvas.toBlob(blob => {
-                    resolve(new File([blob], "capture.png", { type: "image/png" }));
-                }, 'image/png', 1.0); // 最高画質で抽出
+            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
+                handleSuccess(mode, text);
+            }).catch(err => {
+                statusMsg.innerText = "カメラ起動失敗";
             });
         }
 
         function handleSuccess(mode, text) {
+            // CODE39の場合、稀に前後の*が含まれて読み取られることがあるため除去
             const cleanText = text.replace(/\*/g, "");
+            
             if (mode === 'barcode') {
                 let magicId = null;
                 if (cleanText === "627369") magicId = "Color";
@@ -202,23 +177,24 @@
                     if (!magics.includes(magicId)) {
                         magics.push(magicId);
                         localStorage.setItem('myMagics', JSON.stringify(magics));
+                        alert("習得成功: " + magicId);
                     }
-                    alert("魔法「" + magicId + "」を習得しました！");
-                    location.href = "index.html";
                 } else {
-                    alert("未登録のコードです: " + cleanText);
+                    alert("未登録のコード: " + cleanText);
+                    return;
                 }
             } else {
                 if (cleanText.startsWith("MEDIA:")) {
                     localStorage.setItem('currentMedia', cleanText.split(":")[1]);
-                    location.href = "index.html";
                 } else {
-                    alert("有効な媒体ではありません");
+                    alert("媒体ではありません");
+                    return;
                 }
             }
+            location.href = "index.html";
         }
 
-        window.onload = initCamera;
+        window.onload = () => startScanner('barcode');
     </script>
 </body>
 </html>
