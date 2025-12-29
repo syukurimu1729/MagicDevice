@@ -15,26 +15,13 @@
             --glow-rev: 0 0 15px rgba(188, 19, 254, 0.6);
         }
 
-        /* 全体フェードイン */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* 画像切り替えアニメ */
-        @keyframes imgUpdate { 
-            0% { opacity: 0.5; filter: brightness(2) blur(5px); transform: scale(0.98); } 
-            100% { opacity: 1; filter: brightness(1) blur(0); transform: scale(1); } 
-        }
-        /* テキスト更新アニメ */
-        @keyframes textGlow { 0% { color: #fff; text-shadow: 0 0 10px #fff; } 100% { color: #cbd5e0; text-shadow: none; } }
+        @keyframes imgUpdate { 0% { opacity: 0.5; filter: brightness(2); } 100% { opacity: 1; filter: brightness(1); } }
 
         body { 
-            background: var(--bg-color); 
-            color: #e0e0ff; 
-            text-align: center; 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            margin: 0; 
-            padding: 15px;
-            transition: background 0.8s;
-            overflow-x: hidden;
-            box-sizing: border-box;
+            background: var(--bg-color); color: #e0e0ff; text-align: center; 
+            font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 15px;
+            transition: background 0.8s; overflow-x: hidden; box-sizing: border-box;
             animation: fadeIn 0.8s ease-out;
         }
 
@@ -44,31 +31,55 @@
             z-index: -1;
         }
 
-        h1 { font-size: 1.3rem; letter-spacing: 0.1rem; text-shadow: var(--glow-red); color: #fff; margin: 10px 0 20px; }
+        h1 { font-size: 1.1rem; letter-spacing: 0.2rem; text-shadow: var(--glow-red); color: #fff; margin: 10px 0 20px; opacity: 0.8; }
 
         .panel { 
-            border: 1px solid var(--accent-red); 
-            border-radius: 20px; 
-            padding: 15px; 
-            margin-bottom: 20px; 
-            background: var(--panel-bg); 
-            backdrop-filter: blur(10px);
+            border: 1px solid var(--accent-red); border-radius: 20px; padding: 15px; 
+            margin-bottom: 20px; background: var(--panel-bg); backdrop-filter: blur(10px);
             box-shadow: var(--glow-red), inset 0 0 20px rgba(0,0,0,0.5);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            box-sizing: border-box;
-            width: 100%;
+            transition: all 0.5s ease; width: 100%; box-sizing: border-box;
+        }
+
+        /* 画像コンテナ：画面幅に合わせて常に一定のサイズ（正方形）を維持 */
+        .img-container {
+            width: 100%; max-width: 300px; aspect-ratio: 1 / 1; margin: 10px auto;
+            border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3); position: relative;
         }
 
         #display-img { 
-            max-width: 100%; height: auto; border-radius: 12px; 
-            margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            cursor: zoom-in;
-            transition: transform 0.3s ease;
+            width: 100%; height: 100%; object-fit: cover; /* 枠に合わせてトリミング/リサイズ */
+            cursor: zoom-in; transition: transform 0.3s;
         }
-        #display-img:active { transform: scale(0.98); }
-        /* JSでクラスを付け替えて発火 */
         .img-anim { animation: imgUpdate 0.5s ease-out; }
+
+        /* カスタムセレクトボックス（貧相さを解消） */
+        .select-wrapper { 
+            position: relative; width: 100%; max-width: 280px; margin: 15px auto;
+        }
+        select { 
+            appearance: none; background: rgba(255, 255, 255, 0.08); color: #fff; 
+            border: 1px solid var(--accent-red); padding: 12px 40px 12px 15px; border-radius: 12px; 
+            font-size: 1rem; width: 100%; cursor: pointer; outline: none; transition: 0.3s;
+            box-shadow: inset 0 0 10px rgba(255, 45, 85, 0.1);
+            font-family: inherit;
+        }
+        select:focus { box-shadow: var(--glow-red); background: rgba(255, 45, 85, 0.15); }
+        
+        .select-wrapper::after { 
+            content: "▼"; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
+            color: var(--accent-red); font-size: 0.8rem; pointer-events: none; 
+        }
+
+        .btn-cast {
+            background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
+            color: white; border: none; padding: 14px 25px; border-radius: 12px; 
+            font-size: 1rem; font-weight: bold; width: 100%; max-width: 280px;
+            box-shadow: var(--glow-red); cursor: pointer; transition: 0.2s;
+            margin: 0 auto;
+        }
+        .btn-cast:active { transform: scale(0.95); filter: brightness(1.2); }
+        .btn-cast:disabled { background: #333; box-shadow: none; cursor: not-allowed; opacity: 0.5; }
 
         body.is-reversed { --accent-red: var(--accent-rev); --glow-red: var(--glow-rev); }
 
@@ -76,11 +87,10 @@
             margin-bottom: 15px; padding: 10px; border-radius: 50px;
             display: flex; align-items: center; justify-content: center; gap: 10px;
             background: rgba(188, 19, 254, 0.05); border: 1px solid rgba(188, 19, 254, 0.3);
-            width: fit-content; margin-left: auto; margin-right: auto;
-            transition: 0.3s;
+            width: fit-content; margin: 0 auto 15px;
         }
 
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; flex-shrink: 0; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider {
             position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
@@ -93,50 +103,20 @@
         input:checked + .slider { background-color: rgba(155, 48, 255, 0.4); border-color: var(--accent-rev); }
         input:checked + .slider:before { transform: translateX(24px); background-color: var(--accent-rev); box-shadow: 0 0 15px var(--accent-rev); }
 
-        .btn-cast {
-            background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
-            color: white; border: none; padding: 14px 25px; border-radius: 12px; 
-            font-size: 1rem; font-weight: bold; width: 90%; max-width: 300px;
-            box-shadow: var(--glow-red); cursor: pointer; 
-            transition: transform 0.1s, box-shadow 0.3s, filter 0.3s;
-            box-sizing: border-box;
-            display: block; margin: 0 auto;
-        }
-        .btn-cast:hover { filter: brightness(1.1); }
-        .btn-cast:active { transform: scale(0.95); box-shadow: 0 0 5px var(--accent-red); }
-
         .btn-url {
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
             text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-            width: 90%; max-width: 320px; height: 50px; padding: 0 15px;
-            font-size: 0.85rem; font-weight: bold; white-space: nowrap; overflow: hidden;
-            text-overflow: ellipsis; border-radius: 12px; box-sizing: border-box;
-            animation: fadeIn 0.5s ease-out; /* 出現時アニメ */
+            width: 100%; max-width: 300px; height: 50px; margin-top: 15px;
+            font-size: 0.85rem; font-weight: bold; border-radius: 12px; color: white;
         }
 
-        .btn-scan { 
-            text-decoration: none; display: inline-block; margin: 20px 0; 
-            color: var(--accent-red); font-size: 0.9rem; font-weight: bold; 
-            border-bottom: 1px solid var(--accent-red); padding-bottom: 2px;
-            transition: 0.3s; opacity: 0.7;
-        }
-        .btn-scan:hover { opacity: 1; letter-spacing: 0.05rem; }
+        .btn-scan { text-decoration: none; display: inline-block; margin: 20px 0; color: var(--accent-red); font-size: 0.9rem; border-bottom: 1px solid var(--accent-red); }
         
-        #result-text { 
-            margin-top: 15px; font-size: 0.95rem; line-height: 1.5; color: #cbd5e0; 
-            word-wrap: break-word; overflow-wrap: break-word;
-        }
-        .text-update { animation: textGlow 0.8s ease-out; }
-
+        #result-text { margin-top: 15px; font-size: 0.9rem; color: #cbd5e0; min-height: 1.5em; }
         .hidden { display: none !important; }
 
-        #image-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.95); z-index: 1000; justify-content: center; 
-            align-items: center; backdrop-filter: blur(5px);
-            animation: fadeIn 0.3s ease-out;
-        }
+        #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         #overlay-img { max-width: 95%; max-height: 95%; object-fit: contain; }
     </style>
 </head>
@@ -144,18 +124,20 @@
     <h1>ANOMALY DETECTOR</h1>
 
     <div class="panel">
-        <h2 id="media-title" style="font-size: 0.8rem; opacity: 0.7; letter-spacing: 0.15rem;">SIGNAL LOST</h2>
-        <img id="display-img" class="hidden" onclick="openModal()">
+        <h2 id="media-title" style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 0.1rem;">SIGNAL LOST</h2>
+        <div class="img-container">
+            <img id="display-img" src="assets/media/no-signal.jpg" onclick="openModal()">
+        </div>
         <p id="result-text">周囲をスキャンして解析対象を捉えてください</p>
         
         <div id="url-action" class="hidden">
-            <a id="jump-link" href="#" target="_blank" class="btn-cast btn-url">空間転送を開始する</a>
+            <a id="jump-link" href="#" target="_blank" class="btn-url">空間転送を開始する</a>
         </div>
     </div>
 
-    <div id="action-ui" class="hidden">
+    <div id="action-ui">
         <div id="reverse-ui" class="reverse-container hidden">
-            <span class="reverse-label">REVERSE LOGIC</span>
+            <span style="font-size: 0.7rem; font-weight: bold; color: var(--accent-rev);">REVERSE LOGIC</span>
             <label class="switch">
                 <input type="checkbox" id="reverse-switch" onchange="toggleReverseMode()">
                 <span class="slider"></span>
@@ -164,10 +146,12 @@
 
         <div class="panel" style="display: flex; flex-direction: column; align-items: center;">
             <div class="select-wrapper">
-                <select id="magic-select"></select>
+                <select id="magic-select">
+                    <option value="">-- 魔法を選択 --</option>
+                </select>
             </div>
-            <button class="btn-cast" onclick="castMagic()">魔法を流し込む</button>
-            <p id="no-magic-msg" class="hidden" style="font-size: 0.8rem; opacity: 0.6; margin-top: 10px;">使用可能な魔法がありません</p>
+            <button id="cast-button" class="btn-cast" onclick="castMagic()">魔法を流し込む</button>
+            <p id="no-magic-msg" class="hidden" style="font-size: 0.75rem; opacity: 0.5; margin-top: 10px;">習得済みの魔法がありません</p>
         </div>
     </div>
 
@@ -199,39 +183,43 @@
             
             const mediaTitle = document.getElementById('media-title');
             const displayImg = document.getElementById('display-img');
-            const actionUi = document.getElementById('action-ui');
             const select = document.getElementById('magic-select');
             const noMagicMsg = document.getElementById('no-magic-msg');
             const reverseUi = document.getElementById('reverse-ui');
 
+            // 1. 魔法プルダウンの更新（媒体の有無に関わらず実行）
+            select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
+            let hasMagic = false;
+            gameData.magics.forEach(m => {
+                if (myMagics.includes(m.id) && m.id !== 'Reverse') {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.innerText = m.name;
+                    select.appendChild(opt);
+                    hasMagic = true;
+                }
+            });
+
+            if (!hasMagic) {
+                select.classList.add('hidden');
+                noMagicMsg.classList.remove('hidden');
+                document.getElementById('cast-button').disabled = true;
+            } else {
+                select.classList.remove('hidden');
+                noMagicMsg.classList.add('hidden');
+                document.getElementById('cast-button').disabled = false;
+            }
+
+            if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
+
+            // 2. 媒体データの反映
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
-                mediaTitle.innerText = "CONNECTED";
+                mediaTitle.innerText = "CONNECTED: " + mediaId;
                 displayImg.src = "assets/media/" + data.default_img;
-                displayImg.classList.remove('hidden');
-                actionUi.classList.remove('hidden');
-
-                select.innerHTML = "";
-                let hasMagic = false;
-                gameData.magics.forEach(m => {
-                    if (myMagics.includes(m.id) && m.id !== 'Reverse') {
-                        const opt = document.createElement('option');
-                        opt.value = m.id;
-                        opt.innerText = m.name;
-                        select.appendChild(opt);
-                        hasMagic = true;
-                    }
-                });
-
-                if (hasMagic) {
-                    select.classList.remove('hidden');
-                    noMagicMsg.classList.add('hidden');
-                } else {
-                    select.classList.add('hidden');
-                    noMagicMsg.classList.remove('hidden');
-                }
-
-                if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
+            } else {
+                mediaTitle.innerText = "SIGNAL LOST";
+                displayImg.src = "assets/media/no-signal.jpg"; // 未接続用画像
             }
         }
 
@@ -239,24 +227,31 @@
             const mediaId = localStorage.getItem('currentMedia');
             const magicId = document.getElementById('magic-select').value;
             const isReverse = document.getElementById('reverse-switch').checked;
-            if (!magicId) return;
+            const resultText = document.getElementById('result-text');
+            const displayImg = document.getElementById('display-img');
+
+            if (!magicId) {
+                resultText.innerText = "魔法を選択してください";
+                return;
+            }
+
+            // 媒体がない場合
+            if (!mediaId || !gameData.media_data[mediaId]) {
+                resultText.innerText = "対象が存在しません。スキャンを行ってください。";
+                return;
+            }
+
+            // 魔法実行アニメ
+            displayImg.classList.remove('img-anim');
+            void displayImg.offsetWidth;
+            displayImg.classList.add('img-anim');
 
             const targetKey = isReverse ? magicId + "_rev" : magicId;
             const media = gameData.media_data[mediaId];
             const effect = (media.effects && media.effects[targetKey]) ? media.effects[targetKey] : null;
             
-            const resultText = document.getElementById('result-text');
-            const displayImg = document.getElementById('display-img');
             const urlAction = document.getElementById('url-action');
             const jumpLink = document.getElementById('jump-link');
-
-            // アニメーションのリセットと発火
-            displayImg.classList.remove('img-anim');
-            resultText.classList.remove('text-update');
-            void displayImg.offsetWidth; // reflow
-            displayImg.classList.add('img-anim');
-            resultText.classList.add('text-update');
-
             urlAction.classList.add('hidden');
 
             if (effect) {
