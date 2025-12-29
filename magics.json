@@ -1,16 +1,49 @@
 {
   "magics": [
-    { "id": "Color", "code": "627369", "name": "色の魔法", "desc": "色を失ったものに使うと本来の色を取り戻す" },
-    { "id": "Connect", "code": "738739", "name": "つなげる魔法", "desc": "重ねたものに使うと、それがつながって離れなくなる" },
-    { "id": "Align", "code": "697657", "name": "そろえる魔法", "desc": "ばらばらになったものに使うときれいにそろう" },
-    { "id": "Reverse", "code": "000000", "name": "反転の理", "desc": "世界の理を逆転させる。全ての魔法は逆の効果をもたらすだろう。" }
+    {
+      "id": "Color",
+      "code": "627369",
+      "name": "色の魔法",
+      "desc": "色を失ったものに使うと本来の色を取り戻す"
+    },
+    {
+      "id": "Connect",
+      "code": "738739",
+      "name": "つなげる魔法",
+      "desc": "重ねたものに使うと、それがつながって離れなくなる"
+    },
+    {
+      "id": "Align",
+      "code": "697657",
+      "name": "そろえる魔法",
+      "desc": "ばらばらになったものに使うときれいにそろう"
+    },
+    {
+      "id": "Reverse",
+      "code": "000000",
+      "name": "反転の理",
+      "desc": "世界の理を逆転させる。全ての魔法は逆の効果をもたらすだろう。"
+    }
   ],
   "media_data": {
-    "MData1": {
-      "default_img": "default.jpg",
+    "SAMPLE_BOOK": {
+      "default_img": "book_gray.jpg",
       "effects": {
-        "Color": { "res": "色が戻った！", "img": "color.jpg" },
-        "Color_rev": { "res": "色が吸い取られ、モノクロの世界になった...", "img": "mono.jpg" }
+        "Color": { "res": "本に色彩が宿り、隠されていた文字が浮かび上がった！", "img": "book_color.jpg" }
+      }
+    },
+    "QR_SECRET": {
+      "default_img": "qr_damaged.jpg",
+      "effects": {
+        "Color": { 
+          "res": "魔法によってQRコードが修復され、データの復元に成功した！", 
+          "img": "qr_fixed.jpg",
+          "url": "https://example.com/secret-room" 
+        },
+        "Color_rev": {
+          "res": "反転した色彩がQRをさらに汚染し、修復不能になった...",
+          "img": "qr_error.jpg"
+        }
       }
     }
   }
