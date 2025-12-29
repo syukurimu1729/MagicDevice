@@ -3,93 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>魔法の端末 - Test</title>
+    <title>魔法の端末</title>
     <style>
-        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; }
-        .panel { border: 2px solid #e94560; padding: 15px; margin: 10px; border-radius: 10px; }
+        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; }
+        .panel { border: 2px solid #e94560; border-radius: 15px; padding: 15px; margin-bottom: 20px; background: rgba(22, 33, 62, 0.8); }
+        #display-img { max-width: 100%; height: auto; border-radius: 10px; margin: 15px 0; border: 1px solid #444; }
+        select, button { background: #0f3460; color: white; border: 1px solid #e94560; padding: 10px 20px; border-radius: 5px; font-size: 1em; }
+        .btn-scan { background: #e94560; text-decoration: none; display: inline-block; margin-top: 20px; padding: 10px 20px; border-radius: 5px; color: white; font-weight: bold; }
         .hidden { display: none; }
-        #display-img { max-width: 80%; border-radius: 10px; margin-top: 10px; }
-        select, button { padding: 10px; margin: 5px; border-radius: 5px; }
     </style>
 </head>
 <body>
     <h1>魔法の端末</h1>
 
     <div class="panel">
-        <h3>媒体接続状態</h3>
-        <input type="text" id="manual-qr" placeholder="MEDIA:MDataName1">
-        <button onclick="testScan()">QR読み込み(テスト)</button>
-        <div id="current-media-id">未接続</div>
-        <img id="display-img" class="hidden">
+        <h2 id="media-title">媒体未接続</h2>
+        <img id="display-img" src="" class="hidden">
+        <p id="result-text">QRコードをスキャンして媒体に接続してください。</p>
     </div>
 
-    <div id="action-panel" class="panel hidden">
-        <h3>魔法選択</h3>
-        <select id="magic-select">
-            <option value="Fire">火の魔法</option>
-            <option value="Water">水の魔法</option>
-        </select>
-        <button onclick="castMagic()">魔法を使用</button>
+    <div id="action-ui" class="panel hidden">
+        <select id="magic-select"></select>
+        <button onclick="castMagic()">魔法発動</button>
     </div>
 
-    <div id="result-panel" class="panel hidden">
-        <h3>結果</h3>
-        <p id="result-text"></p>
-    </div>
+    <a href="scan.html" class="btn-scan">スキャンモード起動</a>
 
     <script>
-        // 擬似データ（本来はJSONから読み込む）
-        const gameData = {
-            "media_effects": {
-                "MDataName1": {
-                    "Fire": { "res": "氷の壁が溶け、道が現れた！", "img": "MDataName1_Fire.png" },
-                    "Water": { "res": "水浸しになっただけだった。", "img": "MDataName1.png" }
-                }
-            }
-        };
+        let gameData = null;
 
-        function testScan() {
-            const val = document.getElementById('manual-qr').value;
-            if (val.startsWith("MEDIA:")) {
-                const mediaId = val.split(":")[1];
-                localStorage.setItem('currentMedia', mediaId);
-                updateUI();
-            } else {
-                alert("無効な形式です");
-            }
+        async function init() {
+            // 1. JSONデータの読み込み
+            const res = await fetch('magics.json');
+            gameData = await res.json();
+
+            // 2. 魔法セレクトボックスの生成
+            const select = document.getElementById('magic-select');
+            gameData.magics.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.innerText = m.name;
+                select.appendChild(opt);
+            });
+
+            updateUI();
         }
 
         function updateUI() {
             const mediaId = localStorage.getItem('currentMedia');
-            if (mediaId) {
-                document.getElementById('current-media-id').innerText = "接続中: " + mediaId;
-                document.getElementById('action-panel').classList.remove('hidden');
-                
-                // 画像を表示（リポジトリのパスに合わせて調整）
-                const img = document.getElementById('display-img');
-                img.src = `assets/media/${mediaId}.png`; 
-                img.classList.remove('hidden');
+            const mediaTitle = document.getElementById('media-title');
+            const displayImg = document.getElementById('display-img');
+            const actionUi = document.getElementById('action-ui');
+
+            if (mediaId && gameData.media_data[mediaId]) {
+                const data = gameData.media_data[mediaId];
+                mediaTitle.innerText = "接続中: " + mediaId;
+                displayImg.src = "assets/media/" + data.default_img;
+                displayImg.classList.remove('hidden');
+                actionUi.classList.remove('hidden');
             }
         }
 
         function castMagic() {
             const mediaId = localStorage.getItem('currentMedia');
             const magicId = document.getElementById('magic-select').value;
-            const resultPanel = document.getElementById('result-panel');
+            const effect = gameData.media_data[mediaId].effects[magicId];
+            
             const resultText = document.getElementById('result-text');
-            const img = document.getElementById('display-img');
+            const displayImg = document.getElementById('display-img');
 
-            if (gameData.media_effects[mediaId] && gameData.media_effects[mediaId][magicId]) {
-                const effect = gameData.media_effects[mediaId][magicId];
+            if (effect) {
                 resultText.innerText = effect.res;
-                img.src = `assets/media/${effect.img}`; // 結果画像に差し替え
+                displayImg.src = "assets/media/" + effect.img; // 結果画像に差し替え
             } else {
                 resultText.innerText = "何も起きなかった...";
+                // デフォルト画像に戻す
+                displayImg.src = "assets/media/" + gameData.media_data[mediaId].default_img;
             }
-            resultPanel.classList.remove('hidden');
         }
 
-        window.onload = updateUI;
+        window.onload = init;
     </script>
 </body>
 </html>
