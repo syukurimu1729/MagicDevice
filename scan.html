@@ -162,13 +162,21 @@
 
         function handleSuccess(mode, text) {
             if (mode === 'barcode') {
+                // 魔法習得の処理（以前と同じ）
                 let magics = JSON.parse(localStorage.getItem('myMagics')) || [];
                 if (!magics.includes(text)) {
                     magics.push(text);
                     localStorage.setItem('myMagics', JSON.stringify(magics));
                 }
             } else {
-                localStorage.setItem('currentMedia', text);
+                // 媒体読み込みの処理
+                if (text.startsWith("MEDIA:")) {
+                    const mediaId = text.split(":")[1];
+                    localStorage.setItem('currentMedia', mediaId);
+                } else {
+                    alert("これは魔法の媒体ではありません");
+                    return;
+                }
             }
             location.href = "index.html";
         }
