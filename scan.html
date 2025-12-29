@@ -144,7 +144,7 @@
         let lastResult = null;
         let currentMode = 'barcode';
         let gameData = null;
-        let isErrorState = false; // エラー表示中かどうか
+        let isErrorState = false;
 
         async function loadData() {
             try {
@@ -162,7 +162,9 @@
             const qrShutter = document.getElementById('qr-shutter');
             const barcodeLine = document.getElementById('barcode-line');
 
-            if (html5QrCode) { await html5QrCode.stop().catch(()=>{}); }
+            if (html5QrCode) { 
+                await html5QrCode.stop().catch(()=>{}); 
+            }
 
             document.getElementById('btn-barcode').classList.toggle('active', mode === 'barcode');
             document.getElementById('btn-qr').classList.toggle('active', mode === 'qr');
@@ -175,35 +177,41 @@
 
             html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start({ facingMode: "environment" }, { fps: 20 }, (text) => {
-                if (isErrorState) return; // エラー表示中は書き換えない
+                if (isErrorState) return; 
                 lastResult = text;
                 statusMsg.innerText = "解析準備完了";
                 statusMsg.style.color = "#00ffcc";
+            }).catch(err => {
+                statusMsg.innerText = "カメラを起動できません";
             });
         }
 
-        function pressScan() {
+        // エラーを表示する共通関数
+        function showScanError() {
+            if (isErrorState) return;
             const statusMsg = document.getElementById('status-msg');
+            isErrorState = true;
             
+            statusMsg.innerText = "解析に失敗しました";
+            statusMsg.style.color = "#ff2d55"; // 直接カラーコードを指定
+
+            setTimeout(() => {
+                isErrorState = false;
+                if (lastResult) {
+                    statusMsg.innerText = "解析準備完了";
+                    statusMsg.style.color = "#00ffcc";
+                } else {
+                    statusMsg.innerText = "コードを探索中...";
+                    statusMsg.style.color = "#888";
+                }
+            }, 2000);
+        }
+
+        function pressScan() {
             if (lastResult) {
                 handleSuccess(currentMode, lastResult);
             } else {
-                // アラートの代わりにステータスを赤文字で更新
-                isErrorState = true;
-                statusMsg.innerText = "解析に失敗しました";
-                statusMsg.style.color = var(--accent-red);
-
-                // 2秒後に元の状態に戻す
-                setTimeout(() => {
-                    isErrorState = false;
-                    if (lastResult) {
-                        statusMsg.innerText = "解析準備完了";
-                        statusMsg.style.color = "#00ffcc";
-                    } else {
-                        statusMsg.innerText = "コードを探索中...";
-                        statusMsg.style.color = "#888";
-                    }
-                }, 2000);
+                showScanError();
             }
         }
 
@@ -221,17 +229,15 @@
                         showModal("INFO", magic.name, "既に習得済みの魔法です");
                     }
                 } else {
-                    // 未定義のバーコードの場合もエラー通知
                     lastResult = null;
-                    pressScan();
+                    showScanError();
                 }
             } else if (cleanText.startsWith("MEDIA:")) {
                 localStorage.setItem('currentMedia', cleanText.split(":")[1]);
                 location.href = "index.html";
             } else {
-                // 不正なQRの場合もエラー通知
                 lastResult = null;
-                pressScan();
+                showScanError();
             }
         }
 
@@ -242,7 +248,9 @@
             document.getElementById('result-modal').style.display = 'flex';
         }
 
-        function closeModal() { location.href = "index.html"; }
+        function closeModal() {
+            location.href = "index.html";
+        }
 
         window.onload = loadData;
     </script>
