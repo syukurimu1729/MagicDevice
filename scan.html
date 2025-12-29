@@ -2,191 +2,222 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>魔法スキャナー</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>魔法の端末</title>
     <style>
         :root {
-            --panel-height: 200px;
-            --magic-red: #e94560;
-        }
-        body {
-            background: #000; color: white; text-align: center; font-family: sans-serif;
-            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
-            padding-bottom: env(safe-area-inset-bottom);
+            --bg-color: #1a1a2e;
+            --panel-color: rgba(22, 33, 62, 0.8);
+            --accent-red: #e94560;
+            --accent-rev: #9b30ff; /* 反転時の紫 */
         }
 
-        #reader-wrapper { position: relative; flex: 1; width: 100%; background: #000; }
-        #reader { width: 100% !important; height: 100% !important; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-
-        #barcode-line {
-            display: none; position: absolute; top: 50%; left: 5%; width: 90%; height: 2px;
-            background: red; box-shadow: 0 0 10px red; z-index: 100; transform: translateY(-50%);
-        }
-        #qr-shutter {
-            display: none; position: absolute; top: 50%; left: 50%; width: 250px; height: 250px;
-            border: 2px solid var(--magic-red); transform: translate(-50%, -50%); z-index: 100;
+        body { 
+            background: var(--bg-color); 
+            color: white; 
+            text-align: center; 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            transition: background 0.5s, filter 0.5s;
         }
 
-        .controls {
-            padding-top: 15px; height: calc(var(--panel-height) + env(safe-area-inset-bottom));
-            background: #1a1a2e; border-top: 2px solid var(--magic-red);
-            display: flex; flex-direction: column; align-items: center; z-index: 200;
+        /* 反転状態のスタイル */
+        body.is-reversed {
+            --accent-red: var(--accent-rev);
+            background: #0d001a;
+            filter: hue-rotate(180deg) brightness(1.2); /* 全体の色相を回して異界感を出す */
         }
 
-        #scan-trigger {
-            background: var(--magic-red); color: white; border: none; padding: 20px 0;
-            border-radius: 12px; font-size: 1.4em; font-weight: bold; width: 90%;
-            max-width: 400px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+        .panel { 
+            border: 2px solid var(--accent-red); 
+            border-radius: 15px; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            background: var(--panel-color); 
+            transition: border-color 0.5s;
         }
 
-        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .mode-btn {
-            background: transparent; color: #888; border: 1px solid #444;
-            padding: 8px 16px; border-radius: 20px; font-size: 0.8em;
+        #display-img { 
+            max-width: 100%; height: auto; border-radius: 10px; 
+            margin: 15px 0; border: 1px solid #444; cursor: zoom-in;
         }
-        .mode-btn.active { color: white; border-color: var(--magic-red); background: rgba(233, 69, 96, 0.2); }
+        
+        /* 反転スイッチのスタイル */
+        .reverse-container {
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px dashed var(--accent-rev);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: rgba(155, 48, 255, 0.1);
+        }
+        .reverse-label { font-weight: bold; color: var(--accent-rev); text-shadow: 0 0 5px black; }
 
-        /* --- 習得通知パネル (モーダル) --- */
-        #result-modal {
+        .switch { position: relative; display: inline-block; width: 60px; height: 30px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #444; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent-rev); box-shadow: 0 0 10px var(--accent-rev); }
+        input:checked + .slider:before { transform: translateX(30px); }
+
+        .magic-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        select, button { 
+            background: #0f3460; color: white; border: 1px solid var(--accent-red); 
+            padding: 12px; border-radius: 8px; font-size: 1em; width: 80%; max-width: 300px;
+            transition: border-color 0.5s;
+        }
+        
+        .btn-scan { background: var(--accent-red); text-decoration: none; display: inline-block; margin-top: 20px; padding: 12px 24px; border-radius: 8px; color: white; font-weight: bold; transition: background 0.5s; }
+        .hidden { display: none !important; }
+
+        /* 拡大モーダル */
+        #image-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 1000;
-            justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.9); z-index: 1000; justify-content: center; align-items: center;
         }
-        .modal-content {
-            background: #16213e; border: 2px solid var(--magic-red); border-radius: 20px;
-            padding: 30px; width: 100%; max-width: 350px; box-shadow: 0 0 30px var(--magic-red);
-        }
-        .modal-name { font-size: 1.8em; color: var(--magic-red); margin-bottom: 10px; font-weight: bold; }
-        .modal-desc { font-size: 1em; line-height: 1.6; margin-bottom: 25px; color: #eee; }
-        .modal-btn {
-            background: var(--magic-red); color: white; border: none; padding: 12px 30px;
-            border-radius: 8px; font-size: 1.1em; font-weight: bold; width: 100%;
-        }
-
-        .status-text { font-size: 0.8em; margin-bottom: 5px; color: #ccc; }
-        .back-link { color: #888; text-decoration: none; font-size: 0.9em; padding-top: 5px; }
+        #overlay-img { max-width: 95%; max-height: 95%; object-fit: contain; }
     </style>
 </head>
 <body>
+    <h1>魔法の端末</h1>
 
-    <div id="reader-wrapper">
-        <div id="reader"></div>
-        <div id="qr-shutter"></div>
-        <div id="barcode-line"></div>
+    <div class="panel">
+        <h2 id="media-title">媒体未接続</h2>
+        <img id="display-img" class="hidden" onclick="openModal()">
+        <p id="result-text">スキャンして媒体に接続してください</p>
     </div>
 
-    <div class="controls">
-        <div id="status-msg" class="status-text">準備中...</div>
-        <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-        <div class="btn-group">
-            <button id="btn-barcode" class="mode-btn" onclick="startScanner('barcode')">魔法習得</button>
-            <button id="btn-qr" class="mode-btn" onclick="startScanner('qr')">媒体接続</button>
+    <div id="action-ui" class="panel hidden">
+        <div id="reverse-ui" class="reverse-container hidden">
+            <span class="reverse-label">反転の理</span>
+            <label class="switch">
+                <input type="checkbox" id="reverse-switch" onchange="toggleReverseMode()">
+                <span class="slider"></span>
+            </label>
         </div>
-        <a href="index.html" class="back-link">キャンセル</a>
+
+        <div class="magic-controls">
+            <select id="magic-select"></select>
+            <button onclick="castMagic()">魔法を発動する</button>
+        </div>
+        <p id="no-magic-msg" class="hidden">習得済みの魔法がありません</p>
     </div>
 
-    <div id="result-modal">
-        <div class="modal-content">
-            <div id="modal-title" style="font-size: 0.9em; color: #aaa;">新たな魔法を習得した！</div>
-            <div id="modal-name" class="modal-name">魔法名</div>
-            <div id="modal-desc" class="modal-desc">魔法の説明文</div>
-            <button class="modal-btn" onclick="closeModal()">閉じる</button>
-        </div>
+    <a href="scan.html" class="btn-scan">スキャンモード</a>
+
+    <div id="image-overlay" onclick="closeModal()">
+        <img id="overlay-img" src="">
     </div>
 
     <script>
-        let html5QrCode;
-        let lastResult = null;
-        let currentMode = 'barcode';
         let gameData = null;
 
-        // JSONデータの読み込み
-        async function loadData() {
-            const res = await fetch('magics.json');
-            gameData = await res.json();
-            startScanner('barcode');
+        async function init() {
+            try {
+                const res = await fetch('magics.json');
+                gameData = await res.json();
+                updateUI();
+            } catch (e) { console.error("データの読み込み失敗"); }
         }
 
-        async function startScanner(mode) {
-            currentMode = mode;
-            lastResult = null;
-            const statusMsg = document.getElementById('status-msg');
-            const qrShutter = document.getElementById('qr-shutter');
-            const barcodeLine = document.getElementById('barcode-line');
-
-            if (html5QrCode) { await html5QrCode.stop().catch(()=>{}); html5QrCode.clear(); }
-
-            document.getElementById('btn-barcode').className = (mode === 'barcode' ? 'mode-btn active' : 'mode-btn');
-            document.getElementById('btn-qr').className = (mode === 'qr' ? 'mode-btn active' : 'mode-btn');
-
-            let formats = mode === 'barcode' 
-                ? [Html5QrcodeSupportedFormats.CODE_39, Html5QrcodeSupportedFormats.CODE_128]
-                : [Html5QrcodeSupportedFormats.QR_CODE];
-
-            qrShutter.style.display = (mode === 'qr' ? 'block' : 'none');
-            barcodeLine.style.display = (mode === 'barcode' ? 'block' : 'none');
-            statusMsg.innerText = "コードを捉えてください";
-            statusMsg.style.color = "#ccc";
-
-            html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
-            html5QrCode.start({ facingMode: "environment" }, { fps: 25 }, (text) => {
-                lastResult = text;
-                statusMsg.innerText = "★ 解析準備完了！確定ボタンをタップ ★";
-                statusMsg.style.color = "#00ff00";
-            });
-        }
-
-        function pressScan() {
-            if (lastResult) {
-                handleSuccess(currentMode, lastResult);
+        function toggleReverseMode() {
+            const isReverse = document.getElementById('reverse-switch').checked;
+            if (isReverse) {
+                document.body.classList.add('is-reversed');
             } else {
-                alert("まだ読み取れていません");
+                document.body.classList.remove('is-reversed');
             }
         }
 
-        function handleSuccess(mode, text) {
-            const cleanText = text.replace(/\*/g, "");
+        function updateUI() {
+            const mediaId = localStorage.getItem('currentMedia');
+            const myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
             
-            if (mode === 'barcode') {
-                // JSONからコードが一致する魔法を探す
-                const magic = gameData.magics.find(m => m.code === cleanText);
+            const mediaTitle = document.getElementById('media-title');
+            const displayImg = document.getElementById('display-img');
+            const actionUi = document.getElementById('action-ui');
+            const select = document.getElementById('magic-select');
+            const noMagicMsg = document.getElementById('no-magic-msg');
+            const reverseUi = document.getElementById('reverse-ui');
 
-                if (magic) {
-                    let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
-                    const isNew = !myMagics.includes(magic.id);
+            if (mediaId && gameData.media_data[mediaId]) {
+                const data = gameData.media_data[mediaId];
+                mediaTitle.innerText = "媒体接続中";
+                displayImg.src = "assets/media/" + data.default_img;
+                displayImg.classList.remove('hidden');
+                actionUi.classList.remove('hidden');
 
-                    if (isNew) {
-                        myMagics.push(magic.id);
-                        localStorage.setItem('myMagics', JSON.stringify(myMagics));
-                        showModal("新たな魔法を習得した！", magic.name, magic.desc);
-                    } else {
-                        showModal("その魔法は...", magic.name, "すでに習得済みです。");
+                // 魔法リスト（Reverse以外を表示）
+                select.innerHTML = "";
+                let hasMagic = false;
+                gameData.magics.forEach(m => {
+                    if (myMagics.includes(m.id) && m.id !== 'Reverse') {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        opt.innerText = m.name;
+                        select.appendChild(opt);
+                        hasMagic = true;
                     }
+                });
+
+                if (hasMagic) {
+                    select.classList.remove('hidden');
+                    noMagicMsg.classList.add('hidden');
                 } else {
-                    alert("未登録のコードです: " + cleanText);
+                    select.classList.add('hidden');
+                    noMagicMsg.classList.remove('hidden');
                 }
-            } else {
-                if (cleanText.startsWith("MEDIA:")) {
-                    localStorage.setItem('currentMedia', cleanText.split(":")[1]);
-                    location.href = "index.html";
+
+                // 反転魔法を持っているかチェック
+                if (myMagics.includes('Reverse')) {
+                    reverseUi.classList.remove('hidden');
                 }
             }
         }
 
-        function showModal(title, name, desc) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-name').innerText = name;
-            document.getElementById('modal-desc').innerText = desc;
-            document.getElementById('result-modal').style.display = 'flex';
+        function castMagic() {
+            const mediaId = localStorage.getItem('currentMedia');
+            const magicId = document.getElementById('magic-select').value;
+            const isReverse = document.getElementById('reverse-switch').checked;
+            if (!magicId) return;
+
+            // 反転時は ID_rev を探す
+            const targetKey = isReverse ? magicId + "_rev" : magicId;
+            const effect = gameData.media_data[mediaId].effects[targetKey];
+            const resultText = document.getElementById('result-text');
+            const displayImg = document.getElementById('display-img');
+
+            if (effect) {
+                resultText.innerText = effect.res;
+                displayImg.src = "assets/media/" + effect.img;
+            } else {
+                resultText.innerText = isReverse ? "反転の理を以てしても、何も起きないようだ..." : "その魔法はこの媒体には効果がないようだ...";
+            }
         }
 
-        function closeModal() {
-            location.href = "index.html";
+        function openModal() {
+            const displayImg = document.getElementById('display-img');
+            const overlay = document.getElementById('image-overlay');
+            const overlayImg = document.getElementById('overlay-img');
+            if (displayImg.src) {
+                overlayImg.src = displayImg.src;
+                overlay.style.display = 'flex';
+            }
         }
 
-        window.onload = loadData;
+        function closeModal() { document.getElementById('image-overlay').style.display = 'none'; }
+
+        window.onload = init;
     </script>
 </body>
 </html>
