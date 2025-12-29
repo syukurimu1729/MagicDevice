@@ -7,93 +7,66 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
-            --panel-height: 200px; /* ボタンのために少し高さを確保 */
+            --panel-height: 200px;
             --magic-red: #e94560;
         }
         body {
-            background: #000;
-            color: white;
-            text-align: center;
-            font-family: sans-serif;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            background: #000; color: white; text-align: center; font-family: sans-serif;
+            margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        #reader-wrapper {
-            position: relative;
-            flex: 1;
-            width: 100%;
-            background: #000;
-        }
-
+        #reader-wrapper { position: relative; flex: 1; width: 100%; background: #000; }
         #reader { width: 100% !important; height: 100% !important; }
         #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
 
-        /* スキャン線・枠 */
         #barcode-line {
-            display: none;
-            position: absolute;
-            top: 50%; left: 5%; width: 90%; height: 2px;
-            background: red; box-shadow: 0 0 10px red;
-            z-index: 100; transform: translateY(-50%);
+            display: none; position: absolute; top: 50%; left: 5%; width: 90%; height: 2px;
+            background: red; box-shadow: 0 0 10px red; z-index: 100; transform: translateY(-50%);
         }
         #qr-shutter {
-            display: none;
-            position: absolute;
-            top: 50%; left: 50%; width: 250px; height: 250px;
-            border: 2px solid var(--magic-red);
-            transform: translate(-50%, -50%);
-            z-index: 100;
+            display: none; position: absolute; top: 50%; left: 50%; width: 250px; height: 250px;
+            border: 2px solid var(--magic-red); transform: translate(-50%, -50%); z-index: 100;
         }
 
-        /* 下部パネル */
         .controls {
-            padding-top: 15px;
-            height: calc(var(--panel-height) + env(safe-area-inset-bottom));
-            background: #1a1a2e;
-            border-top: 2px solid var(--magic-red);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 200;
+            padding-top: 15px; height: calc(var(--panel-height) + env(safe-area-inset-bottom));
+            background: #1a1a2e; border-top: 2px solid var(--magic-red);
+            display: flex; flex-direction: column; align-items: center; z-index: 200;
         }
 
-        /* 解析ボタンを中央寄りに、大きく配置 */
         #scan-trigger {
-            background: var(--magic-red);
-            color: white;
-            border: none;
-            padding: 20px 0;
-            border-radius: 12px;
-            font-size: 1.4em;
-            font-weight: bold;
-            width: 90%;
-            max-width: 400px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+            background: var(--magic-red); color: white; border: none; padding: 20px 0;
+            border-radius: 12px; font-size: 1.4em; font-weight: bold; width: 90%;
+            max-width: 400px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
         }
-        #scan-trigger:active { transform: scale(0.98); background: #c62842; }
 
         .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; }
         .mode-btn {
-            background: transparent;
-            color: #888;
-            border: 1px solid #444;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8em;
+            background: transparent; color: #888; border: 1px solid #444;
+            padding: 8px 16px; border-radius: 20px; font-size: 0.8em;
         }
         .mode-btn.active { color: white; border-color: var(--magic-red); background: rgba(233, 69, 96, 0.2); }
 
+        /* --- 習得通知パネル (モーダル) --- */
+        #result-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000;
+            justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;
+        }
+        .modal-content {
+            background: #16213e; border: 2px solid var(--magic-red); border-radius: 20px;
+            padding: 30px; width: 100%; max-width: 350px; box-shadow: 0 0 30px var(--magic-red);
+        }
+        .modal-name { font-size: 1.8em; color: var(--magic-red); margin-bottom: 10px; font-weight: bold; }
+        .modal-desc { font-size: 1em; line-height: 1.6; margin-bottom: 25px; color: #eee; }
+        .modal-btn {
+            background: var(--magic-red); color: white; border: none; padding: 12px 30px;
+            border-radius: 8px; font-size: 1.1em; font-weight: bold; width: 100%;
+        }
+
         .status-text { font-size: 0.8em; margin-bottom: 5px; color: #ccc; }
         .back-link { color: #888; text-decoration: none; font-size: 0.9em; padding-top: 5px; }
-
-        #reader__dashboard, #reader__scan_region img { display: none !important; }
     </style>
 </head>
 <body>
@@ -105,10 +78,8 @@
     </div>
 
     <div class="controls">
-        <div id="status-msg" class="status-text">スキャン準備中...</div>
-        
+        <div id="status-msg" class="status-text">準備中...</div>
         <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-
         <div class="btn-group">
             <button id="btn-barcode" class="mode-btn" onclick="startScanner('barcode')">魔法習得</button>
             <button id="btn-qr" class="mode-btn" onclick="startScanner('qr')">媒体接続</button>
@@ -116,22 +87,36 @@
         <a href="index.html" class="back-link">キャンセル</a>
     </div>
 
+    <div id="result-modal">
+        <div class="modal-content">
+            <div id="modal-title" style="font-size: 0.9em; color: #aaa;">新たな魔法を習得した！</div>
+            <div id="modal-name" class="modal-name">魔法名</div>
+            <div id="modal-desc" class="modal-desc">魔法の説明文</div>
+            <button class="modal-btn" onclick="closeModal()">閉じる</button>
+        </div>
+    </div>
+
     <script>
         let html5QrCode;
-        let lastResult = null; // 読み取った結果を一時保存する変数
+        let lastResult = null;
         let currentMode = 'barcode';
+        let gameData = null;
+
+        // JSONデータの読み込み
+        async function loadData() {
+            const res = await fetch('magics.json');
+            gameData = await res.json();
+            startScanner('barcode');
+        }
 
         async function startScanner(mode) {
             currentMode = mode;
-            lastResult = null; // モード切替時に結果をリセット
+            lastResult = null;
             const statusMsg = document.getElementById('status-msg');
             const qrShutter = document.getElementById('qr-shutter');
             const barcodeLine = document.getElementById('barcode-line');
 
-            if (html5QrCode) {
-                await html5QrCode.stop().catch(()=>{});
-                html5QrCode.clear();
-            }
+            if (html5QrCode) { await html5QrCode.stop().catch(()=>{}); html5QrCode.clear(); }
 
             document.getElementById('btn-barcode').className = (mode === 'barcode' ? 'mode-btn active' : 'mode-btn');
             document.getElementById('btn-qr').className = (mode === 'qr' ? 'mode-btn active' : 'mode-btn');
@@ -142,64 +127,66 @@
 
             qrShutter.style.display = (mode === 'qr' ? 'block' : 'none');
             barcodeLine.style.display = (mode === 'barcode' ? 'block' : 'none');
-            statusMsg.innerText = mode === 'barcode' ? "バーコードを赤線に合わせてください" : "QRコードを枠に収めてください";
+            statusMsg.innerText = "コードを捉えてください";
+            statusMsg.style.color = "#ccc";
 
             html5QrCode = new Html5Qrcode("reader", { formatsToSupport: formats });
-
-            const config = { fps: 25, qrbox: undefined };
-
-            html5QrCode.start({ facingMode: "environment" }, config, (text) => {
-                // スキャンに成功してもすぐには画面遷移せず、変数に保存するだけにする
+            html5QrCode.start({ facingMode: "environment" }, { fps: 25 }, (text) => {
                 lastResult = text;
-                statusMsg.innerText = "★ 解析準備完了！ボタンを押してください ★";
-                statusMsg.style.color = "#00ff00"; // 読み取れたら色を変える
-            }).catch(err => {
-                statusMsg.innerText = "カメラ起動失敗";
+                statusMsg.innerText = "★ 解析準備完了！確定ボタンをタップ ★";
+                statusMsg.style.color = "#00ff00";
             });
         }
 
-        // ボタンが押された時の処理
         function pressScan() {
             if (lastResult) {
                 handleSuccess(currentMode, lastResult);
             } else {
-                alert("まだコードが読み取れていません。カメラをコードに合わせてください。");
+                alert("まだ読み取れていません");
             }
         }
 
         function handleSuccess(mode, text) {
             const cleanText = text.replace(/\*/g, "");
+            
             if (mode === 'barcode') {
-                let magicId = null;
-                if (cleanText === "627369") magicId = "Color";
-                else if (cleanText === "738739") magicId = "Connect";
-                else if (cleanText === "697657") magicId = "Align";
+                // JSONからコードが一致する魔法を探す
+                const magic = gameData.magics.find(m => m.code === cleanText);
 
-                if (magicId) {
-                    let magics = JSON.parse(localStorage.getItem('myMagics')) || [];
-                    if (!magics.includes(magicId)) {
-                        magics.push(magicId);
-                        localStorage.setItem('myMagics', JSON.stringify(magics));
+                if (magic) {
+                    let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
+                    const isNew = !myMagics.includes(magic.id);
+
+                    if (isNew) {
+                        myMagics.push(magic.id);
+                        localStorage.setItem('myMagics', JSON.stringify(myMagics));
+                        showModal("新たな魔法を習得した！", magic.name, magic.desc);
+                    } else {
+                        showModal("その魔法は...", magic.name, "すでに習得済みです。");
                     }
-                    alert("習得成功: " + magicId);
                 } else {
                     alert("未登録のコードです: " + cleanText);
-                    lastResult = null; // リセットしてやり直し
-                    return;
                 }
             } else {
                 if (cleanText.startsWith("MEDIA:")) {
                     localStorage.setItem('currentMedia', cleanText.split(":")[1]);
-                } else {
-                    alert("媒体ではありません");
-                    lastResult = null;
-                    return;
+                    location.href = "index.html";
                 }
             }
+        }
+
+        function showModal(title, name, desc) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-name').innerText = name;
+            document.getElementById('modal-desc').innerText = desc;
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
             location.href = "index.html";
         }
 
-        window.onload = () => startScanner('barcode');
+        window.onload = loadData;
     </script>
 </body>
 </html>
