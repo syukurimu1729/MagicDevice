@@ -3,17 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>魔法の端末</title>
+    <title>魔法の端末 - メイン</title>
     <style>
-        body { background: #1a1a2e; color: #e94560; text-align: center; font-family: sans-serif; }
-        .magic-card { border: 2px solid #e94560; margin: 20px; padding: 20px; border-radius: 15px; }
+        body { background: #1a1a2e; color: white; text-align: center; font-family: sans-serif; margin: 0; padding: 20px; }
+        .panel { border: 2px solid #e94560; border-radius: 15px; padding: 15px; margin-bottom: 20px; background: rgba(22, 33, 62, 0.8); }
+        h2 { color: #e94560; font-size: 1.2em; border-bottom: 1px solid #e94560; padding-bottom: 5px; }
+        .magic-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        .magic-item { background: #0f3460; padding: 10px; border-radius: 8px; border: 1px solid #533483; min-width: 80px; }
+        .btn-scan { background: #e94560; color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; font-size: 1em; text-decoration: none; display: inline-block; margin-top: 20px; box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); }
     </style>
 </head>
 <body>
     <h1>魔法の端末</h1>
-    <div class="magic-card">
-        <p>あなたはまだ魔法を覚えていません...</p>
+
+    <div class="panel">
+        <h2>現在接続中の媒体</h2>
+        <div id="current-media">未接続</div>
     </div>
-    <p>【QR/バーコードをスキャンして魔法を習得せよ】</p>
+
+    <div class="panel">
+        <h2>習得済み魔法</h2>
+        <div id="magic-inventory" class="magic-list">
+            <p style="color: #666;">（まだ魔法がありません）</p>
+        </div>
+    </div>
+
+    <a href="scan.html" class="btn-scan">読み取りモード起動</a>
+
+    <script>
+        // ページ読み込み時に保存されたデータを表示
+        window.onload = () => {
+            const magics = JSON.parse(localStorage.getItem('myMagics')) || [];
+            const inventory = document.getElementById('magic-inventory');
+            if (magics.length > 0) inventory.innerHTML = "";
+            magics.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'magic-item';
+                div.innerText = m;
+                inventory.appendChild(div);
+            });
+
+            const media = localStorage.getItem('currentMedia') || "未接続";
+            document.getElementById('current-media').innerText = media;
+        };
+    </script>
 </body>
 </html>
