@@ -23,7 +23,6 @@ body {
     background:#000;
     color:#e0e0ff;
     font-family:'Segoe UI', sans-serif;
-
     width:100%;
     height:100dvh;
     overflow:hidden;
@@ -36,8 +35,8 @@ body {
     position: relative;
     width:100%;
     height: calc(100dvh - var(--controls-h));
-    overflow:hidden;
     background:#000;
+    overflow:hidden;
 }
 
 #reader {
@@ -51,7 +50,7 @@ body {
     object-fit:cover;
 }
 
-/* 演出はすべて camera-area 内 */
+/* overlays */
 .overlay {
     position:absolute;
     inset:0;
@@ -112,7 +111,7 @@ body {
 }
 
 /* ===============================
-   CONTROLS (FIXED)
+   CONTROLS
 ================================ */
 .controls {
     position:fixed;
@@ -120,16 +119,10 @@ body {
     left:0;
     width:100%;
     height:var(--controls-h);
-
-    padding:
-        16px
-        0
-        calc(16px + env(safe-area-inset-bottom));
-
+    padding:16px 0 calc(16px + env(safe-area-inset-bottom));
     background:var(--bg-dark);
     border-top:1px solid var(--accent-red);
     box-shadow:0 -10px 20px rgba(0,0,0,.6);
-
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -205,14 +198,72 @@ body {
     <div id="status-msg">SYSTEM READY</div>
     <button id="scan-trigger">解析を確定する</button>
     <div class="btn-group">
-        <button class="mode-btn active">魔法習得</button>
-        <button class="mode-btn">媒体接続</button>
+        <button id="btn-barcode" class="mode-btn active">魔法習得</button>
+        <button id="btn-qr" class="mode-btn">媒体接続</button>
     </div>
 </div>
 
 <script>
-const flash = document.getElementById("flash");
+let html5QrCode;
+let lastResult = null;
+let currentMode = "barcode";
+
+window.addEventListener("load", () => {
+    startScanner("barcode");
+});
+
+function startScanner(mode) {
+    currentMode = mode;
+    lastResult = null;
+
+    document.getElementById("btn-barcode").classList.toggle("active", mode==="barcode");
+    document.getElementById("btn-qr").classList.toggle("active", mode==="qr");
+    document.getElementById("barcode-line").style.display = mode==="barcode" ? "block" : "none";
+    document.getElementById("qr-shutter").style.display = mode==="qr" ? "block" : "none";
+
+    const status = document.getElementById("status-msg");
+    status.innerText = "カメラ起動中…";
+
+    if (html5QrCode) {
+        html5QrCode.stop().catch(()=>{});
+    }
+
+    html5QrCode = new Html5Qrcode("reader");
+
+    const formats = mode==="qr"
+        ? [Html5QrcodeSupportedFormats.QR_CODE]
+        : [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E
+        ];
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps:20, formatsToSupport:formats },
+        (text) => {
+            if (lastResult !== text) {
+                lastResult = text;
+                status.innerText = "解析準備完了";
+                status.style.color = "#00ffcc";
+                console.log("scanned:", text);
+            }
+        }
+    ).catch(err => {
+        status.innerText = "カメラを起動できません";
+        console.error(err);
+    });
+}
+
+document.getElementById("btn-barcode").onclick = () => startScanner("barcode");
+document.getElementById("btn-qr").onclick = () => startScanner("qr");
+
 document.getElementById("scan-trigger").onclick = () => {
+    if (!lastResult) return;
+    const flash = document.getElementById("flash");
     flash.style.animation = "none";
     void flash.offsetWidth;
     flash.style.animation = "flash .4s";
