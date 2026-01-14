@@ -1,297 +1,223 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>魔法スキャナー</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root {
-            --accent-red: #ff2d55;
-            --glow-red: 0 0 15px rgba(255, 45, 85, 0.6);
-            --bg-dark: #0d0d1a;
-        }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0,
+               user-scalable=no, viewport-fit=cover">
+<title>魔法スキャナー</title>
 
-        @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes successFlash { 0% { background: transparent; } 50% { background: rgba(0, 255, 204, 0.2); } 100% { background: transparent; } }
-        @keyframes modalUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-        body {
-            background: #000; color: #e0e0ff; font-family: 'Segoe UI', sans-serif;
-            height: 100vh; display: flex; flex-direction: column; align-items: center;
-            overflow: hidden; width: 100%;
-            animation: pageIn 0.5s ease-out;
-        }
+<style>
+:root {
+    --accent-red: #ff2d55;
+    --glow-red: 0 0 15px rgba(255,45,85,.6);
+    --bg-dark: #0d0d1a;
+    --controls-h: 190px;
+}
 
-        #reader-wrapper { 
-            position: relative; flex: 1; width: 100%; 
-            display: flex; justify-content: center; align-items: center; overflow: hidden;
-        }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-        #reader { width: 100% !important; max-width: 500px; border: none !important; }
-        #reader video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+body {
+    background:#000;
+    color:#e0e0ff;
+    font-family:'Segoe UI', sans-serif;
 
-        #flash-layer { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index: 150; }
+    width:100%;
+    height:100dvh;
+    overflow:hidden;
+}
 
-        .hud-corner {
-            position: absolute; width: 30px; height: 30px;
-            border: 2px solid var(--accent-red); z-index: 105;
-            filter: drop-shadow(var(--glow-red)); pointer-events: none;
-            transition: all 0.3s ease;
-        }
-        .top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
-        .top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
-        .bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
-        .bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+/* ===============================
+   CAMERA AREA
+================================ */
+#camera-area {
+    position: relative;
+    width:100%;
+    height: calc(100dvh - var(--controls-h));
+    overflow:hidden;
+    background:#000;
+}
 
-        #qr-shutter {
-            display: none; position: absolute; top: 50%; left: 50%; width: 220px; height: 220px;
-            border: 1px solid rgba(255, 45, 85, 0.5); 
-            background: rgba(255, 45, 85, 0.05);
-            transform: translate(-50%, -50%); z-index: 100;
-            box-shadow: inset 0 0 20px rgba(255, 45, 85, 0.2);
-            pointer-events: none;
-            transition: 0.3s ease;
-        }
+#reader {
+    width:100%;
+    height:100%;
+}
 
-        #barcode-line {
-            display: none; position: absolute; top: 50%; left: 10%; width: 80%; height: 2px;
-            background: var(--accent-red); box-shadow: var(--glow-red);
-            z-index: 110; animation: scan-move 2s infinite ease-in-out;
-            pointer-events: none;
-        }
-        @keyframes scan-move {
-            0%, 100% { transform: translateY(-40px); opacity: 0.3; }
-            50% { transform: translateY(40px); opacity: 1; }
-        }
+#reader video {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
 
-        .controls {
-            flex-shrink: 0; padding: 20px 0 calc(20px + env(safe-area-inset-bottom));
-            width: 100%; background: var(--bg-dark); border-top: 1px solid var(--accent-red);
-            display: flex; flex-direction: column; align-items: center; z-index: 200;
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.5);
-        }
+/* 演出はすべて camera-area 内 */
+.overlay {
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+}
 
-        #status-msg {
-            font-size: 0.75rem; margin-bottom: 8px; color: #888;
-            transition: all 0.3s ease; letter-spacing: 0.1rem;
-        }
+.hud-corner {
+    position:absolute;
+    width:30px;
+    height:30px;
+    border:2px solid var(--accent-red);
+    filter:drop-shadow(var(--glow-red));
+}
 
-        #scan-trigger {
-            background: linear-gradient(135deg, var(--accent-red), #ff5e7e);
-            color: white; border: none; padding: 16px 10px; border-radius: 12px; 
-            font-weight: bold; width: 85%; max-width: 400px; margin-bottom: 15px; 
-            box-shadow: var(--glow-red); cursor: pointer;
-            font-size: clamp(0.8rem, 4vw, 1.2rem); white-space: nowrap;
-            transition: transform 0.1s, filter 0.3s;
-        }
-        #scan-trigger:active { transform: scale(0.96); filter: brightness(0.9); }
+.top-left { top:16px; left:16px; border-right:none; border-bottom:none; }
+.top-right { top:16px; right:16px; border-left:none; border-bottom:none; }
+.bottom-left { bottom:16px; left:16px; border-right:none; border-top:none; }
+.bottom-right { bottom:16px; right:16px; border-left:none; border-top:none; }
 
-        .btn-group { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; width: 100%; }
-        .mode-btn {
-            background: rgba(255, 255, 255, 0.05); color: #888; border: 1px solid #333;
-            padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; transition: 0.3s;
-        }
-        .mode-btn.active { color: white; border-color: var(--accent-red); background: rgba(255, 45, 85, 0.2); box-shadow: var(--glow-red); }
+#qr-shutter {
+    display:none;
+    position:absolute;
+    inset:0;
+    margin:auto;
+    width:220px;
+    height:220px;
+    border:1px solid rgba(255,45,85,.5);
+    background:rgba(255,45,85,.05);
+    box-shadow: inset 0 0 20px rgba(255,45,85,.2);
+}
 
-        #result-modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 1000;
-            justify-content: center; align-items: center; 
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background: #101025; border: 1px solid var(--accent-red); border-radius: 24px;
-            padding: 25px; width: 85%; max-width: 320px; box-shadow: var(--glow-red); text-align: center;
-            animation: modalUp 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-        .modal-name { 
-            color: var(--accent-red); margin: 10px 0; font-weight: bold; 
-            font-size: clamp(1rem, 5vw, 1.5rem); text-shadow: var(--glow-red);
-        }
+#barcode-line {
+    display:none;
+    position:absolute;
+    left:10%;
+    width:80%;
+    height:2px;
+    background:var(--accent-red);
+    box-shadow:var(--glow-red);
+    animation:scan 2s infinite ease-in-out;
+}
 
-        .back-link { color: #555; text-decoration: none; font-size: 0.8rem; margin-top: 5px; transition: 0.3s; }
-        .back-link:hover { color: #888; }
-        
-        #reader__dashboard { display: none !important; }
-    </style>
+@keyframes scan {
+    0%,100% { top:45%; opacity:.3; }
+    50% { top:55%; opacity:1; }
+}
+
+#flash {
+    position:absolute;
+    inset:0;
+    background:transparent;
+}
+
+@keyframes flash {
+    0%{background:transparent}
+    50%{background:rgba(0,255,204,.2)}
+    100%{background:transparent}
+}
+
+/* ===============================
+   CONTROLS (FIXED)
+================================ */
+.controls {
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:var(--controls-h);
+
+    padding:
+        16px
+        0
+        calc(16px + env(safe-area-inset-bottom));
+
+    background:var(--bg-dark);
+    border-top:1px solid var(--accent-red);
+    box-shadow:0 -10px 20px rgba(0,0,0,.6);
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    z-index:100;
+}
+
+#status-msg {
+    font-size:.7rem;
+    margin-bottom:8px;
+    color:#888;
+}
+
+#scan-trigger {
+    width:85%;
+    max-width:360px;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    font-weight:bold;
+    color:#fff;
+    background:linear-gradient(135deg,var(--accent-red),#ff5e7e);
+    box-shadow:var(--glow-red);
+}
+
+.btn-group {
+    display:flex;
+    gap:10px;
+    margin-top:10px;
+}
+
+.mode-btn {
+    padding:6px 14px;
+    border-radius:20px;
+    border:1px solid #333;
+    background:rgba(255,255,255,.05);
+    color:#888;
+    font-size:.7rem;
+}
+
+.mode-btn.active {
+    color:#fff;
+    border-color:var(--accent-red);
+    box-shadow:var(--glow-red);
+}
+
+/* safari fallback */
+@supports (-webkit-touch-callout: none) {
+    body { height:-webkit-fill-available; }
+}
+</style>
 </head>
+
 <body>
 
-    <div id="reader-wrapper">
-        <div id="flash-layer"></div>
+<!-- CAMERA -->
+<div id="camera-area">
+    <div id="reader"></div>
+
+    <div class="overlay">
         <div class="hud-corner top-left"></div>
         <div class="hud-corner top-right"></div>
         <div class="hud-corner bottom-left"></div>
         <div class="hud-corner bottom-right"></div>
-        <div id="reader"></div>
+
         <div id="qr-shutter"></div>
         <div id="barcode-line"></div>
+        <div id="flash"></div>
     </div>
+</div>
 
-    <div class="controls">
-        <div id="status-msg">SYSTEM READY</div>
-        <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-        <div class="btn-group">
-            <button id="btn-barcode" class="mode-btn" onclick="startScanner('barcode')">魔法習得</button>
-            <button id="btn-qr" class="mode-btn" onclick="startScanner('qr')">媒体接続</button>
-        </div>
-        <a href="index.html" class="back-link">CANCEL</a>
+<!-- CONTROLS -->
+<div class="controls">
+    <div id="status-msg">SYSTEM READY</div>
+    <button id="scan-trigger">解析を確定する</button>
+    <div class="btn-group">
+        <button class="mode-btn active">魔法習得</button>
+        <button class="mode-btn">媒体接続</button>
     </div>
+</div>
 
-    <div id="result-modal">
-        <div class="modal-content">
-            <div id="modal-title" style="font-size: 0.7rem; color: #666;">DATA ACQUIRED</div>
-            <div id="modal-name" class="modal-name">魔法名</div>
-            <div id="modal-desc" style="font-size: 0.85rem; line-height: 1.6; margin-bottom: 25px; color: #ccd;">説明文</div>
-            <button class="modal-btn" style="background:var(--accent-red); color:white; border:none; padding:12px; border-radius:10px; width:100%; cursor:pointer;" onclick="closeModal()">閉じる</button>
-        </div>
-    </div>
+<script>
+const flash = document.getElementById("flash");
+document.getElementById("scan-trigger").onclick = () => {
+    flash.style.animation = "none";
+    void flash.offsetWidth;
+    flash.style.animation = "flash .4s";
+};
+</script>
 
-    <script>
-        let html5QrCode;
-        let lastResult = null;
-        let currentMode = 'barcode';
-        let gameData = null;
-        let isErrorState = false;
-
-        async function loadData() {
-            try {
-                const res = await fetch('magics.json');
-                gameData = await res.json();
-                startScanner('barcode');
-            } catch (e) { console.error("Data Load Error"); }
-        }
-
-        async function startScanner(mode) {
-            currentMode = mode;
-            lastResult = null;
-            isErrorState = false;
-            const statusMsg = document.getElementById('status-msg');
-            const qrShutter = document.getElementById('qr-shutter');
-            const barcodeLine = document.getElementById('barcode-line');
-
-            if (html5QrCode) { 
-                await html5QrCode.stop().catch(()=>{}); 
-            }
-
-            document.getElementById('btn-barcode').classList.toggle('active', mode === 'barcode');
-            document.getElementById('btn-qr').classList.toggle('active', mode === 'qr');
-            
-            qrShutter.style.display = (mode === 'qr' ? 'block' : 'none');
-            barcodeLine.style.display = (mode === 'barcode' ? 'block' : 'none');
-            
-            statusMsg.innerText = mode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
-            statusMsg.style.color = "#888";
-
-            // フォーマット指定用設定
-            // barcodeモードの時は1次元バーコードのみ、qrモードの時はQRコードのみに制限
-            const formats = (mode === 'qr') 
-                ? [ Html5QrcodeSupportedFormats.QR_CODE ] 
-                : [ 
-                    Html5QrcodeSupportedFormats.EAN_13, 
-                    Html5QrcodeSupportedFormats.EAN_8, 
-                    Html5QrcodeSupportedFormats.CODE_128, 
-                    Html5QrcodeSupportedFormats.CODE_39,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E
-                  ];
-
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" }, 
-                { 
-                    fps: 20,
-                    formatsToSupport: formats // ここで読み取り対象を制限
-                }, 
-                (text) => {
-                    if (isErrorState) return; 
-                    if (lastResult !== text) {
-                        lastResult = text;
-                        statusMsg.innerText = "解析準備完了";
-                        statusMsg.style.color = "#00ffcc";
-                        statusMsg.style.textShadow = "0 0 10px rgba(0,255,204,0.5)";
-                    }
-                }
-            ).catch(err => {
-                statusMsg.innerText = "カメラを起動できません";
-            });
-        }
-
-        function showScanError() {
-            if (isErrorState) return;
-            const statusMsg = document.getElementById('status-msg');
-            isErrorState = true;
-            
-            statusMsg.innerText = "解析に失敗しました";
-            statusMsg.style.color = "#ff2d55";
-            statusMsg.style.textShadow = "none";
-
-            setTimeout(() => {
-                isErrorState = false;
-                if (lastResult) {
-                    statusMsg.innerText = "解析準備完了";
-                    statusMsg.style.color = "#00ffcc";
-                } else {
-                    statusMsg.innerText = currentMode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
-                    statusMsg.style.color = "#888";
-                }
-            }, 2000);
-        }
-
-        function pressScan() {
-            if (lastResult) {
-                const flash = document.getElementById('flash-layer');
-                flash.style.animation = 'none';
-                void flash.offsetWidth;
-                flash.style.animation = 'successFlash 0.4s ease-out';
-                
-                handleSuccess(currentMode, lastResult);
-            } else {
-                showScanError();
-            }
-        }
-
-        function handleSuccess(mode, text) {
-            const cleanText = text.replace(/\*/g, "");
-            if (mode === 'barcode') {
-                const magic = gameData.magics.find(m => m.code === cleanText);
-                if (magic) {
-                    let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
-                    if (!myMagics.includes(magic.id)) {
-                        myMagics.push(magic.id);
-                        localStorage.setItem('myMagics', JSON.stringify(myMagics));
-                        showModal("NEW SKILL", magic.name, magic.desc);
-                    } else {
-                        showModal("INFO", magic.name, "既に習得済みの魔法です");
-                    }
-                } else {
-                    lastResult = null;
-                    showScanError();
-                }
-            } else if (cleanText.startsWith("MEDIA:")) {
-                localStorage.setItem('currentMedia', cleanText.split(":")[1]);
-                location.href = "index.html";
-            } else {
-                lastResult = null;
-                showScanError();
-            }
-        }
-
-        function showModal(title, name, desc) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-name').innerText = name;
-            document.getElementById('modal-desc').innerText = desc;
-            document.getElementById('result-modal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            location.href = "index.html";
-        }
-
-        window.onload = loadData;
-    </script>
 </body>
 </html>
