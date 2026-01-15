@@ -217,7 +217,7 @@
             // - videoConstraints で ideal 解像度を指定（端末により上下します）
             // - formatsToSupport は元通り使用
             html5QrCode.start(
-                { facingMode: "environment" }, 
+                { facingMode: { exact: "environment" } }, 
                 { 
                     fps: 10,
                     formatsToSupport: formats,
