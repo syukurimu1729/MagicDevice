@@ -8,191 +8,153 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-:root{
-  --accent-red:#ff2d55;
-  --bg-dark:#0d0d1a;
-  --panel-dark:#0f1020;
-  --glow:0 0 14px rgba(255,45,85,.6);
-  --controls-h: 176px; /* 操作パネルの想定高さ（safe-area を含める） */
+:root {
+    --accent-red:#ff2d55;
+    --ready-green:#00ffcc;
+    --bg-dark:#0d0d1a;
+    --panel-dark:#111122;
+    --glow-red:0 0 14px rgba(255,45,85,.6);
+    --glow-green:0 0 14px rgba(0,255,204,.6);
 }
 
-/* 基本リセット */
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+* { box-sizing:border-box; margin:0; padding:0; }
 
-/* 画面全体を使う（iOS/Android挙動に強い） */
-body{
-  background:#000;
-  color:#e0e0ff;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  min-height:100svh;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
+body {
+    background:#000;
+    color:#e0e0ff;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    height:100dvh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
 }
 
-/* ==== カメラ領域 (上部) ==== */
-/* 明確に「画面の上: calc(100dvh - controls)」にして黒帯を防止 */
-#reader-wrapper{
-  position:relative;
-  width:100%;
-  height: calc(100dvh - var(--controls-h));
-  max-height: calc(100dvh - var(--controls-h));
-  overflow:hidden;
-  background:#000;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+/* ===== カメラ領域 ===== */
+#reader-wrapper {
+    position:relative;
+    flex:1;
+    width:100%;
+    overflow:hidden;
 }
 
-/* #reader は html5-qrcode が使うコンテナ。flex ではなく block にして安定させる */
-#reader{
-  width:100%!important;
-  height:100%!important;
-  max-width:600px; /* 見た目制限：大きい画面では reader を中央に保つ */
+#reader,
+#reader video {
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
 }
 
-/* video 要素の振る舞いを明確に */
-#reader video{
-  width:100%!important;
-  height:100%!important;
-  object-fit:cover!important;
-  display:block;
+/* HUD */
+.hud-corner {
+    position:absolute;
+    width:28px;
+    height:28px;
+    border:2px solid var(--accent-red);
+    filter:drop-shadow(var(--glow-red));
+}
+.top-left{top:16px;left:16px;border-right:none;border-bottom:none;}
+.top-right{top:16px;right:16px;border-left:none;border-bottom:none;}
+.bottom-left{bottom:16px;left:16px;border-right:none;border-top:none;}
+.bottom-right{bottom:16px;right:16px;border-left:none;border-top:none;}
+
+/* ===== 操作UI ===== */
+.controls {
+    background:var(--panel-dark);
+    padding:
+        16px
+        16px
+        calc(28px + env(safe-area-inset-bottom));
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
 }
 
-/* フラッシュレイヤー */
-#flash-layer{position:absolute;inset:0;pointer-events:none;z-index:150}
-
-/* HUD は初期非表示にしておく（読み込みUIで残らないように） */
-/* 必要なら JS で reader-wrapper に .scanning を付けて表示できる */
-.hud-corner{
-  position:absolute;
-  width:30px;height:30px;
-  border:2px solid var(--accent-red);
-  filter:drop-shadow(var(--glow));
-  z-index:140;
-  opacity:0; /* 初期は見えない */
-  transition:opacity .25s ease;
-}
-#reader-wrapper.scanning .hud-corner{ opacity:1; } /* JS で制御可能 */
-.top-left{ top:18px; left:18px; border-right:none;border-bottom:none; }
-.top-right{ top:18px; right:18px; border-left:none;border-bottom:none; }
-.bottom-left{ bottom:18px; left:18px; border-right:none;border-top:none; }
-.bottom-right{ bottom:18px; right:18px; border-left:none;border-top:none; }
-
-/* QR シュター / バーコードラインは読み取りモードで表示（JS が display 変更しているので OK） */
-#qr-shutter{
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:220px; height:220px; border:1px solid rgba(255,45,85,.5);
-  background:rgba(255,45,85,.04); box-shadow:inset 0 0 18px rgba(255,45,85,.12);
-  z-index:130; display:none;
-}
-#barcode-line{
-  position:absolute; left:10%; top:50%; width:80%; height:2px;
-  background:var(--accent-red); box-shadow:var(--glow);
-  z-index:130; display:none;
+#status-msg {
+    font-size:.75rem;
+    letter-spacing:.15em;
+    color:#888;
+    transition:.2s;
 }
 
-/* ==== 操作パネル (下部) ==== */
-/* ここで safe-area を考慮して十分な下余白を確保 */
-.controls{
-  width:100%;
-  background:var(--panel-dark);
-  border-top:1px solid rgba(255,45,85,0.08);
-  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-  box-shadow: 0 -6px 20px rgba(0,0,0,0.6);
-  /* 高さを固定的に扱わず padding で安全に余白確保 */
+#status-msg.ready {
+    color:var(--ready-green);
+    text-shadow:var(--glow-green);
 }
 
-/* ステータスは小さく落ち着いた色で */
-#status-msg{
-  font-size:.75rem;
-  color:#9aa;
-  letter-spacing:.08em;
+#scan-trigger {
+    width:100%;
+    max-width:420px;
+    height:52px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,var(--accent-red),#ff6a88);
+    color:#fff;
+    font-size:1rem;
+    font-weight:600;
+    box-shadow:var(--glow-red);
 }
 
-/* メインボタン（今風で押しやすい） */
-#scan-trigger{
-  width:100%;
-  max-width:480px;
-  height:54px;
-  border-radius:14px;
-  border:none;
-  background:linear-gradient(135deg,var(--accent-red),#ff6a88);
-  color:#fff;
-  font-weight:700;
-  font-size:1rem;
-  box-shadow:var(--glow);
-  -webkit-tap-highlight-color: transparent;
+.btn-group {
+    display:flex;
+    gap:10px;
 }
 
-/* ボタングループ */
-.btn-group{
-  display:flex;
-  gap:10px;
-  justify-content:center;
-  flex-wrap:wrap;
+.mode-btn {
+    min-width:96px;
+    height:40px;
+    border-radius:20px;
+    background:#1a1a2e;
+    border:1px solid #333;
+    color:#aaa;
 }
 
-/* モードボタンはフラットで視認性良く */
-.mode-btn{
-  min-width:100px;
-  height:42px;
-  padding:0 14px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,0.06);
-  background:linear-gradient(180deg,#12121a,#0b0b10);
-  color:#d0d6e0;
-  font-weight:600;
-  font-size:.88rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.6);
-}
-.mode-btn.active{
-  background:linear-gradient(135deg, rgba(255,45,85,.18), rgba(255,45,85,.08));
-  color:#fff;
-  border-color: rgba(255,45,85,0.25);
-  box-shadow: var(--glow);
+.mode-btn.active {
+    background:rgba(255,45,85,.25);
+    color:#fff;
+    border-color:var(--accent-red);
+    box-shadow:var(--glow-red);
 }
 
-/* CANCEL (軽め) */
-.back-link{
-  color:#99a;
-  text-decoration:none;
-  font-size:.82rem;
-  margin-top:2px;
+.back-link {
+    font-size:.75rem;
+    color:#666;
+    text-decoration:none;
 }
 
-/* モーダル（そのまま） */
-#result-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.9); display:flex; justify-content:center; align-items:center; z-index:999; }
-.modal-content{ background:#101025; border-radius:16px; padding:20px; width:86%; max-width:340px; border:1px solid rgba(255,45,85,0.12); box-shadow:var(--glow); color:#e6e9ff; text-align:center; }
-.modal-content button{ margin-top:12px; padding:10px 14px; border-radius:12px; border:none; background:var(--accent-red); color:#fff; font-weight:700; }
+/* ===== モーダル ===== */
+#result-modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.9);
+    justify-content:center;
+    align-items:center;
+}
 
-/* 非表示ダッシュボード */
-#reader__dashboard{ display:none!important; }
+.modal-content {
+    background:#101025;
+    border:1px solid var(--accent-red);
+    border-radius:20px;
+    padding:24px;
+    width:86%;
+    max-width:320px;
+    text-align:center;
+    box-shadow:var(--glow-red);
+}
+
+#reader__dashboard{display:none!important;}
 </style>
 </head>
 
 <body>
 
 <div id="reader-wrapper">
-    <div id="flash-layer"></div>
-
-    <!-- HUD は初期非表示。JSで .scanning クラスを付けると表示できます -->
     <div class="hud-corner top-left"></div>
     <div class="hud-corner top-right"></div>
     <div class="hud-corner bottom-left"></div>
     <div class="hud-corner bottom-right"></div>
-
-    <!-- html5-qrcode のコンテナ（JSは変更無し） -->
     <div id="reader"></div>
-
-    <!-- 表示は startScanner() が切り替えます（JSそのまま） -->
-    <div id="qr-shutter"></div>
-    <div id="barcode-line"></div>
 </div>
 
 <div class="controls">
@@ -212,18 +174,18 @@ body{
 <div id="result-modal">
     <div class="modal-content">
         <div id="modal-title">DATA ACQUIRED</div>
-        <div id="modal-name" class="modal-name">魔法名</div>
+        <div id="modal-name"></div>
         <div id="modal-desc"></div>
         <button onclick="closeModal()">閉じる</button>
     </div>
 </div>
 
-<!-- === JS はあなたが貼ってくれたものをそのまま使用しています（変更無し） === -->
 <script>
 let html5QrCode;
 let cameras = [];
 let cameraIndex = 0;
 let lastResult = null;
+let scanArmed = false;
 let currentMode = 'barcode';
 let gameData = null;
 
@@ -241,14 +203,15 @@ async function loadData() {
 async function startScanner(mode) {
     currentMode = mode;
     lastResult = null;
+    scanArmed = false;
+
+    document.getElementById('status-msg').innerText = "スキャン待機中";
+    document.getElementById('status-msg').classList.remove('ready');
 
     if (html5QrCode) await html5QrCode.stop().catch(()=>{});
 
     document.getElementById('btn-barcode').classList.toggle('active', mode==='barcode');
     document.getElementById('btn-qr').classList.toggle('active', mode==='qr');
-
-    document.getElementById('qr-shutter').style.display = mode==='qr'?'block':'none';
-    document.getElementById('barcode-line').style.display = mode==='barcode'?'block':'none';
 
     html5QrCode = new Html5Qrcode("reader");
 
@@ -267,9 +230,11 @@ async function startScanner(mode) {
         cameras[cameraIndex].id,
         { fps:10, formatsToSupport:formats },
         text => {
-            if (text !== lastResult) {
+            if (!scanArmed) {
                 lastResult = text;
-                document.getElementById('status-msg').innerText = "解析準備完了";
+                scanArmed = true;
+                document.getElementById('status-msg').innerText = "解析確定可能";
+                document.getElementById('status-msg').classList.add('ready');
             }
         }
     );
@@ -281,7 +246,7 @@ function switchCamera() {
 }
 
 function pressScan() {
-    if (!lastResult) return;
+    if (!scanArmed || !lastResult) return;
     handleSuccess(currentMode, lastResult);
 }
 
@@ -289,7 +254,7 @@ function handleSuccess(mode, text) {
     const clean = text.replace(/\*/g,'');
     if (mode==='barcode') {
         const magic = gameData.magics.find(m=>m.code===clean);
-        if (magic) showModal("NEW SKILL", magic.name, magic.desc);
+        if (magic) showModal("DATA ACQUIRED", magic.name, magic.desc);
     }
 }
 
