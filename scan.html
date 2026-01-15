@@ -19,24 +19,54 @@
 @keyframes modalUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
 body {
-    background:#000; color:#e0e0ff; font-family:'Segoe UI',sans-serif;
-    height:100vh; display:flex; flex-direction:column; align-items:center;
-    overflow:hidden; animation:pageIn 0.5s ease-out;
+    background:#000;
+    color:#e0e0ff;
+    font-family:'Segoe UI',sans-serif;
+    min-height:100svh;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    animation:pageIn 0.5s ease-out;
 }
 
+/* ===== カメラ領域 ===== */
 #reader-wrapper {
-    position:relative; flex:1; width:100%;
-    display:flex; justify-content:center; align-items:center; overflow:hidden;
+    position:relative;
+    flex:1 1 auto;
+    width:100%;
+    overflow:hidden;
 }
 
-#reader { width:100%!important; max-width:500px; }
-#reader video { width:100%!important; height:100%!important; object-fit:cover!important; }
+#reader {
+    position:absolute;
+    inset:0;
+    width:100%!important;
+    height:100%!important;
+    max-width:none;
+}
 
-#flash-layer { position:absolute; inset:0; pointer-events:none; z-index:150; }
+#reader video {
+    position:absolute;
+    inset:0;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+}
+
+/* ===== 演出 ===== */
+#flash-layer {
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    z-index:150;
+}
 
 .hud-corner {
-    position:absolute; width:30px; height:30px;
-    border:2px solid var(--accent-red); z-index:105;
+    position:absolute;
+    width:30px;
+    height:30px;
+    border:2px solid var(--accent-red);
+    z-index:105;
     filter:drop-shadow(var(--glow-red));
 }
 .top-left{top:20px;left:20px;border-right:none;border-bottom:none;}
@@ -45,17 +75,26 @@ body {
 .bottom-right{bottom:20px;right:20px;border-left:none;border-top:none;}
 
 #qr-shutter {
-    display:none; position:absolute; top:50%; left:50%;
-    width:220px; height:220px;
+    display:none;
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:220px;
+    height:220px;
+    transform:translate(-50%,-50%);
     border:1px solid rgba(255,45,85,.5);
     background:rgba(255,45,85,.05);
-    transform:translate(-50%,-50%);
     box-shadow:inset 0 0 20px rgba(255,45,85,.2);
 }
 
 #barcode-line {
-    display:none; position:absolute; top:50%; left:10%;
-    width:80%; height:2px; background:var(--accent-red);
+    display:none;
+    position:absolute;
+    top:50%;
+    left:10%;
+    width:80%;
+    height:2px;
+    background:var(--accent-red);
     box-shadow:var(--glow-red);
     animation:scan-move 2s infinite ease-in-out;
 }
@@ -65,47 +104,87 @@ body {
     50%{transform:translateY(40px);opacity:1;}
 }
 
+/* ===== 操作UI ===== */
 .controls {
-    width:100%; padding:20px;
+    width:100%;
     background:var(--bg-dark);
     border-top:1px solid var(--accent-red);
-    display:flex; flex-direction:column; align-items:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:
+        20px
+        16px
+        calc(36px + env(safe-area-inset-bottom));
 }
 
-#status-msg { font-size:.75rem; margin-bottom:8px; color:#888; letter-spacing:.1rem; }
+#status-msg {
+    font-size:.75rem;
+    margin-bottom:8px;
+    color:#888;
+    letter-spacing:.1rem;
+}
 
 #scan-trigger {
-    width:85%; max-width:400px; padding:16px;
-    border:none; border-radius:12px;
+    width:90%;
+    max-width:420px;
+    padding:16px;
+    border:none;
+    border-radius:14px;
     background:linear-gradient(135deg,var(--accent-red),#ff5e7e);
-    color:#fff; font-weight:bold;
+    color:#fff;
+    font-weight:bold;
     box-shadow:var(--glow-red);
 }
 
-.btn-group { display:flex; gap:10px; margin:15px 0; }
-.mode-btn {
-    padding:8px 16px; border-radius:20px;
-    background:rgba(255,255,255,.05);
-    color:#888; border:1px solid #333;
+.btn-group {
+    display:flex;
+    gap:10px;
+    margin:16px 0;
+    flex-wrap:wrap;
+    justify-content:center;
 }
+
+.mode-btn {
+    padding:8px 16px;
+    border-radius:20px;
+    background:rgba(255,255,255,.05);
+    color:#888;
+    border:1px solid #333;
+}
+
 .mode-btn.active {
-    color:#fff; border-color:var(--accent-red);
+    color:#fff;
+    border-color:var(--accent-red);
     background:rgba(255,45,85,.2);
     box-shadow:var(--glow-red);
 }
 
-.back-link { color:#555; text-decoration:none; font-size:.8rem; }
+.back-link {
+    color:#555;
+    text-decoration:none;
+    font-size:.8rem;
+}
 
+/* ===== モーダル ===== */
 #result-modal {
-    display:none; position:fixed; inset:0;
+    display:none;
+    position:fixed;
+    inset:0;
     background:rgba(0,0,0,.9);
-    justify-content:center; align-items:center;
+    justify-content:center;
+    align-items:center;
 }
 
 .modal-content {
-    background:#101025; border:1px solid var(--accent-red);
-    border-radius:24px; padding:25px; width:85%; max-width:320px;
-    box-shadow:var(--glow-red); text-align:center;
+    background:#101025;
+    border:1px solid var(--accent-red);
+    border-radius:24px;
+    padding:25px;
+    width:85%;
+    max-width:320px;
+    box-shadow:var(--glow-red);
+    text-align:center;
     animation:modalUp .4s cubic-bezier(.18,.89,.32,1.28);
 }
 
@@ -161,7 +240,6 @@ async function loadData() {
     gameData = await res.json();
     cameras = await Html5Qrcode.getCameras();
 
-    // 背面っぽいカメラを初期選択
     const back = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
     cameraIndex = back >= 0 ? back : 0;
 
@@ -234,5 +312,6 @@ function closeModal(){ location.href="index.html"; }
 
 window.onload = loadData;
 </script>
+
 </body>
 </html>
