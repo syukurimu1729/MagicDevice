@@ -22,38 +22,35 @@ body {
     background:#000;
     color:#e0e0ff;
     font-family:'Segoe UI',sans-serif;
-    min-height:100svh;
+    height:100vh;
     display:flex;
     flex-direction:column;
     overflow:hidden;
     animation:pageIn 0.5s ease-out;
 }
 
-/* ===== カメラ領域 ===== */
+/* ===== カメラ領域（構造は一切変更しない） ===== */
 #reader-wrapper {
     position:relative;
-    flex:1 1 auto;
+    flex:1;
     width:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
     overflow:hidden;
 }
 
 #reader {
-    position:absolute;
-    inset:0;
     width:100%!important;
-    height:100%!important;
-    max-width:none;
+    max-width:500px;
 }
 
 #reader video {
-    position:absolute;
-    inset:0;
     width:100%!important;
     height:100%!important;
     object-fit:cover!important;
 }
 
-/* ===== 演出 ===== */
 #flash-layer {
     position:absolute;
     inset:0;
@@ -104,7 +101,7 @@ body {
     50%{transform:translateY(40px);opacity:1;}
 }
 
-/* ===== 操作UI ===== */
+/* ===== 操作UI（ここだけ調整） ===== */
 .controls {
     width:100%;
     background:var(--bg-dark);
@@ -115,7 +112,7 @@ body {
     padding:
         20px
         16px
-        calc(36px + env(safe-area-inset-bottom));
+        calc(32px + env(safe-area-inset-bottom));
 }
 
 #status-msg {
@@ -127,10 +124,10 @@ body {
 
 #scan-trigger {
     width:90%;
-    max-width:420px;
+    max-width:400px;
     padding:16px;
     border:none;
-    border-radius:14px;
+    border-radius:12px;
     background:linear-gradient(135deg,var(--accent-red),#ff5e7e);
     color:#fff;
     font-weight:bold;
