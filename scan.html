@@ -1,482 +1,295 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>魔法スキャナー</title>
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
 :root{
-  --accent-red:#ff2d55;
-  --ready-green:#00ffcc;
-  --bg-dark:#0d0d1a;
-  --panel-dark:#0f1120;
-  --glow-red:0 0 18px rgba(255,45,85,0.5);
-  --glow-green:0 0 18px rgba(0,255,204,0.45);
-  --controls-h:180px;
+  --red:#ff2d55;
+  --green:#00ffcc;
+  --dark:#0b0c18;
 }
-
-/* reset */
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
+html,body{
+  margin:0;
+  height:100%;
   background:#000;
-  color:#e6e9ff;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  min-height:100svh;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
+  color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
+body{overflow:hidden}
 
-/* camera area */
-#reader-wrapper{
+/* ===== Camera ===== */
+#camera-wrap{
   position:relative;
   width:100%;
-  height: calc(100dvh - var(--controls-h));
-  max-height: calc(100dvh - var(--controls-h));
+  height:calc(100dvh - 180px);
   overflow:hidden;
-  background:#000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
 }
-#reader{ width:100%!important; height:100%!important; max-width:900px; }
-#reader video{ width:100%!important; height:100%!important; object-fit:cover!important; display:block; }
-
-/* flash overlays */
-#flash-layer{ position:absolute; inset:0; pointer-events:none; z-index:150; }
-#success-flash {
-  position:absolute; inset:0; background: rgba(0,255,204,0.10);
-  mix-blend-mode: screen; opacity:0; pointer-events:none; z-index:160;
-  transition: opacity 160ms ease-out;
-  box-shadow: inset 0 0 80px rgba(0,255,204,0.12);
+#reader, #reader video{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
 }
-#success-flash.show { opacity:1; transition: opacity 120ms ease-in; }
 
-#error-flash {
-  position:absolute; inset:0; background: rgba(255,45,85,0.10);
-  mix-blend-mode: screen; opacity:0; pointer-events:none; z-index:160;
-  transition: opacity 200ms ease-out;
-  box-shadow: inset 0 0 80px rgba(255,45,85,0.10);
+/* ===== HUD ===== */
+.hud{
+  position:absolute;
+  width:28px;height:28px;
+  border:2px solid var(--red);
+  z-index:5;
 }
-#error-flash.show { opacity:1; transition: opacity 120ms ease-in; }
+.tl{top:14px;left:14px;border-right:none;border-bottom:none}
+.tr{top:14px;right:14px;border-left:none;border-bottom:none}
+.bl{bottom:14px;left:14px;border-right:none;border-top:none}
+.br{bottom:14px;right:14px;border-left:none;border-top:none}
 
-/* HUD corners (red frame) */
-.hud-corner {
-  position:absolute; width:30px; height:30px;
-  border:2px solid var(--accent-red); filter:drop-shadow(var(--glow-red));
-  z-index:140; transition: opacity .18s ease, transform .18s ease;
-  opacity:1;
+/* ===== Flash ===== */
+.flash{
+  position:absolute;
+  inset:0;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .15s;
+  z-index:10;
 }
-body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
-.top-left{ top:16px; left:16px; border-right:none; border-bottom:none; }
-.top-right{ top:16px; right:16px; border-left:none; border-bottom:none; }
-.bottom-left{ bottom:16px; left:16px; border-right:none; border-top:none; }
-.bottom-right{ bottom:16px; right:16px; border-left:none; border-top:none; }
+.flash.green{background:rgba(0,255,204,.18)}
+.flash.red{background:rgba(255,45,85,.18)}
+.flash.show{opacity:1}
 
-/* QR shutter & barcode-line (JS toggles) */
-#qr-shutter{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:220px; height:220px; border-radius:12px; border:1px solid rgba(255,45,85,0.35); background:rgba(255,45,85,0.03); box-shadow: inset 0 0 20px rgba(255,45,85,0.06); z-index:130; display:none; }
-#barcode-line{ position:absolute; left:10%; top:50%; width:80%; height:2px; background:var(--accent-red); box-shadow:var(--glow-red); z-index:130; display:none; animation: scan-move 2s infinite ease-in-out; }
-@keyframes scan-move { 0%,100%{ transform:translateY(-40px); opacity:.25 } 50%{ transform:translateY(40px); opacity:1 } }
-
-/* overlay message inside camera area (pop up) */
-#overlay-msg {
+/* ===== Overlay Message ===== */
+#overlay{
   position:absolute;
   top:10%;
   left:50%;
-  transform: translateX(-50%) translateY(-8px) scale(.98);
-  background: rgba(6,10,20,0.85);
-  color:#ffdfe8;
-  padding:10px 14px;
-  border-radius:12px;
-  border:1px solid rgba(255,45,85,0.12);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
-  z-index:170;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.8);
+  border-radius:14px;
+  padding:12px 18px;
+  font-weight:700;
   opacity:0;
-  pointer-events:none;
-  min-width: 220px;
-  max-width: 88%;
-  text-align:center;
-  transition: opacity .22s ease, transform .22s ease;
-  font-weight:600;
-  font-size:0.95rem;
+  transition:.25s;
+  z-index:20;
 }
-#overlay-msg.show { opacity:1; transform: translateX(-50%) translateY(0) scale(1); }
-#overlay-msg.error { border-color: rgba(255,45,85,0.28); color:#ffdfe8; background: linear-gradient(180deg, rgba(24,6,10,0.92), rgba(6,2,4,0.8)); }
-#overlay-msg.success { border-color: rgba(0,255,204,0.18); color:#002f26; background: linear-gradient(180deg, rgba(0,255,204,0.12), rgba(0,20,12,0.08)); }
+#overlay.show{opacity:1}
+#overlay.error{border:1px solid var(--red);color:#ffd6dd}
+#overlay.success{border:1px solid var(--green);color:#002d26;background:rgba(0,255,204,.15)}
 
-/* controls (bottom) */
-.controls{
-  width:100%;
-  background:var(--panel-dark);
-  border-top:1px solid rgba(255,45,85,0.06);
-  padding:18px 16px calc(22px + env(safe-area-inset-bottom));
+/* ===== Controls ===== */
+#controls{
+  height:180px;
+  background:var(--dark);
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:12px;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
+  padding:16px;
+  gap:10px;
 }
-#status-msg{ font-size:.85rem; color:#9aa3b2; letter-spacing:.08em; transition: color .18s ease, text-shadow .18s ease; min-height:1.1em; text-align:center; }
-#status-msg.ready{ color: var(--ready-green); text-shadow: var(--glow-green); }
+#status{
+  font-size:.85rem;
+  color:#aaa;
+}
+#status.ready{
+  color:var(--green);
+}
+button{
+  border:none;
+  border-radius:14px;
+  height:52px;
+  width:100%;
+  max-width:420px;
+  font-weight:800;
+}
+#scan-btn{
+  background:linear-gradient(135deg,var(--red),#ff6a88);
+  color:#fff;
+}
+.mode-row{display:flex;gap:10px}
+.mode{
+  height:44px;
+  padding:0 16px;
+  background:#111;
+  color:#ccc;
+}
+.mode.active{
+  background:rgba(255,45,85,.25);
+  color:#fff;
+}
+a{color:#aaa;font-size:.8rem}
 
-/* main button */
-#scan-trigger{ width:100%; max-width:520px; height:56px; border-radius:14px; border:none; background: linear-gradient(135deg,var(--accent-red),#ff6a88); color:#fff; font-weight:800; font-size:1.05rem; box-shadow:var(--glow-red); -webkit-tap-highlight-color:transparent; cursor:pointer; }
-
-/* button group */
-.btn-group{ display:flex; gap:10px; align-items:center; justify-content:center; }
-.mode-btn{ min-width:110px; height:44px; padding:0 16px; border-radius:999px; border:1px solid rgba(255,255,255,0.04); background: linear-gradient(180deg,#0c0c12,#0a0a12); color:#cdd6e6; font-weight:700; font-size:.95rem; box-shadow: 0 3px 8px rgba(0,0,0,0.5); cursor:pointer; }
-.mode-btn.active{ background: linear-gradient(135deg, rgba(255,45,85,0.2), rgba(255,45,85,0.08)); color:#fff; border-color: rgba(255,45,85,0.2); box-shadow:var(--glow-red); }
-.mode-btn.switch{ min-width:48px; width:48px; padding:0; }
-
-/* cancel */
-.back-link{ color:#9aa3b2; text-decoration:none; font-size:.86rem; opacity:.95 }
-
-/* modal */
-#result-modal{ display:none; position:fixed; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85)); z-index:999; justify-content:center; align-items:center; padding:22px; }
-.modal-card{ width:100%; max-width:520px; background: linear-gradient(180deg,#0f1030,#0b0b18); border-radius:20px; border:1px solid rgba(255,45,85,0.12); padding:22px; box-shadow: 0 10px 40px rgba(0,0,0,0.7), var(--glow-red); color:#e9ecff; text-align:center; }
-.modal-label{ font-size:.75rem; color:#9aa3b2; margin-bottom:8px; letter-spacing:.12em; }
-.modal-name{ font-size: clamp(1.4rem, 4.8vw, 2.4rem); color:var(--accent-red); font-weight:900; margin:6px 0 10px; text-shadow: 0 0 10px rgba(255,45,85,0.18); }
-.modal-desc{ font-size:1rem; color:#cfe7ff; line-height:1.45; margin-bottom:18px; min-height:3.2em; }
-.modal-cta{ width:100%; height:56px; border-radius:12px; border:none; font-weight:800; font-size:1rem; color:#061018; background: linear-gradient(135deg,#00ffd0,#00c2a8); box-shadow:var(--glow-green); cursor:pointer; margin-top:6px; }
-.modal-cancel{ margin-top:12px; display:inline-block; color:#ffdfe8; text-decoration:underline; cursor:pointer; }
-
-/* hide html5 dashboard */
-#reader__dashboard{ display:none!important; }
+/* ===== Modal ===== */
+#modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  background:rgba(0,0,0,.7);
+  z-index:100;
+}
+.card{
+  background:#0f1030;
+  padding:24px;
+  border-radius:22px;
+  max-width:520px;
+  width:90%;
+  text-align:center;
+}
+.card h1{margin:.2em 0;color:var(--red)}
+.card p{color:#cfe7ff}
+.card .ok{
+  background:linear-gradient(135deg,var(--green),#00c2a8);
+  color:#001f18;
+  margin-top:14px;
+}
+.card .cancel{
+  display:block;
+  margin-top:12px;
+  text-decoration:underline;
+  color:#ffd6dd;
+}
 </style>
 </head>
+
 <body>
 
-<!-- camera area -->
-<div id="reader-wrapper">
-  <div id="flash-layer"></div>
-  <div id="success-flash" aria-hidden="true"></div>
-  <div id="error-flash" aria-hidden="true"></div>
-
-  <div class="hud-corner top-left"></div>
-  <div class="hud-corner top-right"></div>
-  <div class="hud-corner bottom-left"></div>
-  <div class="hud-corner bottom-right"></div>
-
+<div id="camera-wrap">
   <div id="reader"></div>
 
-  <div id="qr-shutter"></div>
-  <div id="barcode-line"></div>
+  <div class="hud tl"></div><div class="hud tr"></div>
+  <div class="hud bl"></div><div class="hud br"></div>
 
-  <!-- overlay message inside camera area -->
-  <div id="overlay-msg" role="status" aria-live="polite"></div>
+  <div id="flash-green" class="flash green"></div>
+  <div id="flash-red" class="flash red"></div>
+
+  <div id="overlay"></div>
 </div>
 
-<!-- controls -->
-<div class="controls">
-  <div id="status-msg">SYSTEM READY</div>
+<div id="controls">
+  <div id="status">SYSTEM READY</div>
+  <button id="scan-btn" onclick="pressScan()">解析を確定する</button>
 
-  <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-
-  <div class="btn-group">
-    <button id="btn-barcode" class="mode-btn" onclick="startScanner('barcode')">魔法習得</button>
-    <button id="btn-qr" class="mode-btn" onclick="startScanner('qr')">媒体接続</button>
-    <button class="mode-btn switch" onclick="switchCamera()">📷</button>
+  <div class="mode-row">
+    <button class="mode active" id="m-bar" onclick="setMode('barcode')">魔法習得</button>
+    <button class="mode" id="m-qr" onclick="setMode('qr')">媒体接続</button>
   </div>
 
-  <a href="index.html" class="back-link">CANCEL</a>
+  <a href="index.html">CANCEL</a>
 </div>
 
-<!-- modal -->
-<div id="result-modal" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-label" id="modal-title">DATA ACQUIRED</div>
-    <div id="modal-name" class="modal-name">魔法名</div>
-    <div id="modal-desc" class="modal-desc">説明文</div>
-
-    <!-- OK: confirm and return to index -->
-    <button class="modal-cta" id="modal-ok" onclick="confirmAndReturn()">閉じるして元に戻る</button>
-    <!-- Cancel: close modal and return to scan screen with red pop -->
-    <div><a href="#" class="modal-cancel" onclick="cancelModal(); return false;">キャンセル</a></div>
+<div id="modal">
+  <div class="card">
+    <small>DATA ACQUIRED</small>
+    <h1 id="m-name">魔法名</h1>
+    <p id="m-desc"></p>
+    <button class="ok" onclick="confirm()">閉じるして元に戻る</button>
+    <a class="cancel" onclick="cancel()">キャンセル</a>
   </div>
 </div>
 
 <script>
-/* Camera + UI logic */
-/* Ensures flash -> delay -> modal/redirect behavior */
-let html5QrCode;
-let cameras = [];
-let cameraIndex = 0;
-let lastResult = null;
-let scanArmed = false;
-let currentMode = 'barcode';
-let gameData = null;
+let qr, cameras=[], camIndex=0;
+let mode='barcode';
+let armed=false;
+let last=null;
+let data=null;
 
-let overlayTimer = null;
-let flashTimer = null;
-
-/* overlay message in camera area */
-function showOverlayMessage(msg, type = 'error', duration = 3000) {
-  const el = document.getElementById('overlay-msg');
-  clearTimeout(overlayTimer);
-  el.className = '';
-  el.innerText = msg;
+/* ===== Effects ===== */
+function flash(type){
+  const el=document.getElementById(type==='green'?'flash-green':'flash-red');
   el.classList.add('show');
-  if (type === 'error') el.classList.add('error');
-  else if (type === 'success') el.classList.add('success');
-  else el.classList.add('info');
-
-  overlayTimer = setTimeout(() => {
-    el.classList.remove('show');
-    el.className = '';
-  }, duration);
+  navigator.vibrate?.(type==='green'?60:[30,20,30]);
+  setTimeout(()=>el.classList.remove('show'),300);
+}
+function overlay(msg,type='error',t=2500){
+  const o=document.getElementById('overlay');
+  o.textContent=msg;
+  o.className='show '+type;
+  setTimeout(()=>o.className='',t);
 }
 
-/* flashes and vibrations */
-function playSuccessEffect() {
-  const flash = document.getElementById('success-flash');
-  clearTimeout(flashTimer);
-  flash.classList.add('show');
-  if (navigator.vibrate) {
-    try { navigator.vibrate(60); } catch(e) {}
-  }
-  flashTimer = setTimeout(() => flash.classList.remove('show'), 320);
-}
+/* ===== Load ===== */
+fetch('magics.json').then(r=>r.json()).then(j=>data=j);
+Html5Qrcode.getCameras().then(c=>{
+  cameras=c;
+  start();
+});
 
-function playErrorEffect() {
-  const ef = document.getElementById('error-flash');
-  clearTimeout(flashTimer);
-  ef.classList.add('show');
-  if (navigator.vibrate) {
-    try { navigator.vibrate([30,20,30]); } catch(e){}
-  }
-  flashTimer = setTimeout(() => ef.classList.remove('show'), 520);
-}
-
-/* load data and cameras */
-async function loadData() {
-  try {
-    const res = await fetch('magics.json');
-    gameData = await res.json();
-  } catch (e) {
-    console.error('magics.json load error', e);
-    gameData = { magics: [], media_data: {} };
-  }
-
-  try {
-    cameras = await Html5Qrcode.getCameras();
-  } catch (e) {
-    console.warn('getCameras failed', e);
-    cameras = [];
-  }
-
-  const back = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
-  cameraIndex = back >= 0 ? back : 0;
-
-  startScanner('barcode');
-}
-
-/* start scanning */
-async function startScanner(mode) {
-  currentMode = mode;
-  lastResult = null;
-  scanArmed = false;
-
-  // hide overlay
-  const ov = document.getElementById('overlay-msg');
-  ov.className = '';
-
-  const statusEl = document.getElementById('status-msg');
-  statusEl.classList.remove('ready');
-  statusEl.innerText = mode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
-
-  if (html5QrCode) await html5QrCode.stop().catch(()=>{});
-
-  document.getElementById('btn-barcode').classList.toggle('active', mode === 'barcode');
-  document.getElementById('btn-qr').classList.toggle('active', mode === 'qr');
-
-  document.getElementById('qr-shutter').style.display = mode === 'qr' ? 'block' : 'none';
-  document.getElementById('barcode-line').style.display = mode === 'barcode' ? 'block' : 'none';
-
-  html5QrCode = new Html5Qrcode("reader");
-
-  const formats = mode === 'qr'
-    ? [ Html5QrcodeSupportedFormats.QR_CODE ]
-    : [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E
-      ];
-
-  try {
-    await html5QrCode.start(
-      (cameras && cameras[cameraIndex]) ? cameras[cameraIndex].id : { facingMode: "environment" },
-      { fps: 10, formatsToSupport: formats },
-      (text) => {
-        if (!scanArmed) {
-          lastResult = text;
-          scanArmed = true;
-          const st = document.getElementById('status-msg');
-          st.classList.add('ready');
-          st.innerText = "解析確定可能";
-        } else {
-          lastResult = text;
-        }
-      },
-      (err) => {
-        // ignore per-frame errors
-      }
-    );
-  } catch (err) {
-    console.error('start failed', err);
-    document.getElementById('status-msg').innerText = "カメラを起動できません";
-  }
-}
-
-/* camera switching */
-function switchCamera() {
-  if (!cameras || cameras.length === 0) {
-    showOverlayMessage("カメラが複数見つかりません", 'error', 1800);
-    return;
-  }
-  cameraIndex = (cameraIndex + 1) % cameras.length;
-  startScanner(currentMode);
-}
-
-/* user pressed confirm scan button */
-function pressScan() {
-  if (!scanArmed || !lastResult) {
-    const s = document.getElementById('status-msg');
-    s.classList.remove('ready');
-    s.innerText = "対象を合わせてください";
-    showOverlayMessage("読み取りが確認できません。画面内に対象を合わせてください。", 'error', 2500);
-    return;
-  }
-
-  // handle success (async)
-  handleSuccess(currentMode, lastResult);
-}
-
-/* core: handle success for both barcode and qr.
-   Ensures: stop scanner -> play flash -> delay -> modal/redirect or error handling.
-*/
-async function handleSuccess(mode, text) {
-  const clean = (text || '').replace(/\*/g, "");
-
-  // Stop scanner immediately to avoid double reads / camera flicker
-  try {
-    if (html5QrCode) await html5QrCode.stop();
-  } catch (e) {
-    // ignore
-  }
-
-  // Success path for QR (MEDIA:)
-  if (mode === 'qr') {
-    if (clean.startsWith("MEDIA:")) {
-      const id = clean.split(":")[1] || "";
-      if (id) {
-        // visual feedback THEN redirect after delay
-        playSuccessEffect();
-        // save media and wait before redirect to give the flash time
-        setTimeout(() => {
-          try { localStorage.setItem('currentMedia', id); } catch(e){}
-          // small delay to let UI settle
-          setTimeout(()=> { location.href = "index.html"; }, 180);
-        }, 450); // flash duration delay
-        return;
-      }
+function start(){
+  qr=new Html5Qrcode('reader');
+  qr.start(
+    cameras[camIndex]?.id||{facingMode:'environment'},
+    {fps:10},
+    txt=>{
+      last=txt.replace(/\*/g,'');
+      armed=true;
+      const s=document.getElementById('status');
+      s.textContent='解析確定可能';
+      s.classList.add('ready');
     }
-    // not found
-    playErrorEffect();
-    showOverlayMessage("媒体データが見つかりませんでした", 'error', 3000);
-    // reset scanning state and restart scanner after a short delay to allow user to see error
-    setTimeout(() => {
-      scanArmed = false; lastResult = null;
-      const st = document.getElementById('status-msg');
-      st.classList.remove('ready');
-      st.innerText = "QRコードを探索中...";
-      // restart scanner
-      startScanner('qr');
-    }, 800);
+  );
+}
+
+/* ===== UI ===== */
+function setMode(m){
+  mode=m;
+  armed=false;last=null;
+  document.getElementById('status').textContent=
+    m==='qr'?'QRコードを探索中':'バーコードを探索中';
+  document.getElementById('status').classList.remove('ready');
+  document.getElementById('m-bar').classList.toggle('active',m==='barcode');
+  document.getElementById('m-qr').classList.toggle('active',m==='qr');
+}
+
+/* ===== Scan Button ===== */
+function pressScan(){
+  if(!armed){
+    flash('red');
+    overlay('読み取り対象が見つかりません');
     return;
   }
 
-  // barcode mode
-  if (mode === 'barcode') {
-    const magic = (gameData && gameData.magics) ? gameData.magics.find(m => m.code === clean) : null;
-    if (magic) {
-      // play flash/vib, then after a short delay show modal (gives "read" sensation)
-      playSuccessEffect();
-      // persist learned magic now (so modal shows consistent state)
-      try {
-        let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
-        if (!myMagics.includes(magic.id)) {
-          myMagics.push(magic.id);
-          localStorage.setItem('myMagics', JSON.stringify(myMagics));
-        }
-      } catch (e) {}
-      // delay before showing modal
-      setTimeout(() => {
-        showModal("DATA ACQUIRED", magic.name, magic.desc);
-      }, 450);
-      return;
-    } else {
-      // not found: show error flash + overlay; then restart scanning
-      playErrorEffect();
-      showOverlayMessage("魔法コードが見つかりませんでした", 'error', 3000);
-      setTimeout(() => {
-        scanArmed = false; lastResult = null;
-        const statusEl = document.getElementById('status-msg');
-        statusEl.classList.remove('ready');
-        statusEl.innerText = "バーコードを探索中...";
-        startScanner('barcode');
-      }, 800);
-      return;
+  if(mode==='qr'){
+    if(last.startsWith('MEDIA:')){
+      flash('green');
+      setTimeout(()=>{
+        localStorage.setItem('currentMedia',last.split(':')[1]);
+        qr.stop().then(()=>location.href='index.html');
+      },450);
+    }else{
+      flash('red');
+      overlay('媒体データが見つかりません');
     }
+    return;
   }
 
-  // fallback
-  showOverlayMessage("未対応の読み取りです", 'error', 2000);
-  setTimeout(()=> startScanner(mode), 700);
+  const m=data.magics.find(x=>x.code===last);
+  if(!m){
+    flash('red');
+    overlay('魔法コードが見つかりませんでした');
+    return;
+  }
+
+  flash('green');
+  setTimeout(()=>{
+    document.getElementById('m-name').textContent=m.name;
+    document.getElementById('m-desc').textContent=m.desc;
+    document.getElementById('modal').style.display='flex';
+  },450);
 }
 
-/* modal functions */
-/* Cancel: close modal and return to scanning, show red pop */
-function cancelModal() {
-  document.getElementById('result-modal').style.display = 'none';
-  document.body.classList.remove('modal-open');
-
-  // show a quick red pop to indicate cancelled
-  playErrorEffect();
-  showOverlayMessage("取得をキャンセルしました", 'error', 2000);
-
-  // reset scanning state and restart scanner shortly
-  scanArmed = false;
-  lastResult = null;
-  const st = document.getElementById('status-msg');
-  st.classList.remove('ready');
-  st.innerText = currentMode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
-  setTimeout(()=> startScanner(currentMode), 500);
+/* ===== Modal ===== */
+function cancel(){
+  flash('red');
+  overlay('取得をキャンセルしました');
+  document.getElementById('modal').style.display='none';
 }
-
-/* Confirm/OK: persist and return to index (original behavior) */
-function confirmAndReturn() {
-  document.getElementById('result-modal').style.display = 'none';
-  document.body.classList.remove('modal-open');
-  // short pause so modal hide is visible
-  setTimeout(()=> { location.href = "index.html"; }, 260);
+function confirm(){
+  qr.stop().then(()=>location.href='index.html');
 }
-
-function showModal(title, name, desc) {
-  document.getElementById('modal-title').innerText = title;
-  document.getElementById('modal-name').innerText = name;
-  document.getElementById('modal-desc').innerText = desc;
-  document.getElementById('result-modal').style.display = 'flex';
-  document.body.classList.add('modal-open');
-}
-
-window.onload = loadData;
 </script>
+
 </body>
 </html>
