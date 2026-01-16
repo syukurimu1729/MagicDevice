@@ -51,7 +51,7 @@ body{
 #success-flash {
   position:absolute; inset:0; background: rgba(0,255,204,0.10);
   mix-blend-mode: screen; opacity:0; pointer-events:none; z-index:160;
-  transition: opacity 180ms ease-out;
+  transition: opacity 160ms ease-out;
   box-shadow: inset 0 0 80px rgba(0,255,204,0.12);
 }
 #success-flash.show { opacity:1; transition: opacity 120ms ease-in; }
@@ -138,10 +138,11 @@ body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
 /* modal */
 #result-modal{ display:none; position:fixed; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85)); z-index:999; justify-content:center; align-items:center; padding:22px; }
 .modal-card{ width:100%; max-width:520px; background: linear-gradient(180deg,#0f1030,#0b0b18); border-radius:20px; border:1px solid rgba(255,45,85,0.12); padding:22px; box-shadow: 0 10px 40px rgba(0,0,0,0.7), var(--glow-red); color:#e9ecff; text-align:center; }
+.modal-label{ font-size:.75rem; color:#9aa3b2; margin-bottom:8px; letter-spacing:.12em; }
 .modal-name{ font-size: clamp(1.4rem, 4.8vw, 2.4rem); color:var(--accent-red); font-weight:900; margin:6px 0 10px; text-shadow: 0 0 10px rgba(255,45,85,0.18); }
 .modal-desc{ font-size:1rem; color:#cfe7ff; line-height:1.45; margin-bottom:18px; min-height:3.2em; }
 .modal-cta{ width:100%; height:56px; border-radius:12px; border:none; font-weight:800; font-size:1rem; color:#061018; background: linear-gradient(135deg,#00ffd0,#00c2a8); box-shadow:var(--glow-green); cursor:pointer; margin-top:6px; }
-.modal-cancel{ margin-top:12px; display:inline-block; color:#b8c8da; text-decoration:underline; }
+.modal-cancel{ margin-top:12px; display:inline-block; color:#ffdfe8; text-decoration:underline; cursor:pointer; }
 
 /* hide html5 dashboard */
 #reader__dashboard{ display:none!important; }
@@ -191,13 +192,18 @@ body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
     <div id="modal-name" class="modal-name">魔法名</div>
     <div id="modal-desc" class="modal-desc">説明文</div>
 
-    <button class="modal-cta" id="modal-ok" onclick="closeModal()">閉じるして元に戻る</button>
-    <div><a href="#" class="modal-cancel" onclick="closeModal(); return false;">キャンセル</a></div>
+    <!-- OK: confirm and return to index.html -->
+    <button class="modal-cta" id="modal-ok" onclick="confirmAndReturn()">閉じるして元に戻る</button>
+    <!-- Cancel: close modal and return to scan screen with red pop -->
+    <div><a href="#" class="modal-cancel" onclick="cancelModal(); return false;">キャンセル</a></div>
   </div>
 </div>
 
 <script>
-/* これまで通りカメラ／解析ロジックは保持しつつ、UI 表示のみ追加しています */
+/* Camera + UI logic */
+/* Maintains prior behavior; adds overlay pop, success/error flashes, vibration,
+   and changes modal cancel behavior to return to scan (with red pop). */
+
 let html5QrCode;
 let cameras = [];
 let cameraIndex = 0;
@@ -210,7 +216,6 @@ let overlayTimer = null;
 let flashTimer = null;
 
 function showOverlayMessage(msg, type = 'error', duration = 3000) {
-  // type: 'error' or 'success' or 'info'
   const el = document.getElementById('overlay-msg');
   clearTimeout(overlayTimer);
   el.className = ''; // reset classes
@@ -222,16 +227,14 @@ function showOverlayMessage(msg, type = 'error', duration = 3000) {
 
   overlayTimer = setTimeout(() => {
     el.classList.remove('show');
-    el.className = ''; // remove classes
+    el.className = '';
   }, duration);
 }
 
 function playSuccessEffect() {
-  // green flash overlay
   const flash = document.getElementById('success-flash');
   clearTimeout(flashTimer);
   flash.classList.add('show');
-  // vibration
   if (navigator.vibrate) {
     try { navigator.vibrate(60); } catch(e) {}
   }
@@ -309,7 +312,6 @@ async function startScanner(mode) {
       (cameras && cameras[cameraIndex]) ? cameras[cameraIndex].id : { facingMode: "environment" },
       { fps: 10, formatsToSupport: formats },
       (text) => {
-        // arm on first stable read
         if (!scanArmed) {
           lastResult = text;
           scanArmed = true;
@@ -321,7 +323,7 @@ async function startScanner(mode) {
         }
       },
       (err) => {
-        // ignore per-frame errors
+        // per-frame errors ignored
       }
     );
   } catch (err) {
@@ -348,7 +350,7 @@ function pressScan() {
     return;
   }
 
-  // do not play success here; let handleSuccess choose effect based on result
+  // Handle result (success or not) — effects handled in handleSuccess
   handleSuccess(currentMode, lastResult);
 }
 
@@ -358,16 +360,13 @@ function handleSuccess(mode, text) {
     if (clean.startsWith("MEDIA:")) {
       const id = clean.split(":")[1] || "";
       if (id) {
-        // success visual
         playSuccessEffect();
         try { localStorage.setItem('currentMedia', id); } catch(e){}
         document.getElementById('status-msg').innerText = "媒体を接続しました...";
-        // short delay to allow flash/vibrate
         setTimeout(()=> { location.href = "index.html"; }, 600);
         return;
       }
     }
-    // not recognized media
     playErrorEffect();
     showOverlayMessage("媒体データが見つかりませんでした", 'error', 3000);
     scanArmed = false; lastResult = null;
@@ -379,9 +378,8 @@ function handleSuccess(mode, text) {
   if (mode === 'barcode') {
     const magic = (gameData && gameData.magics) ? gameData.magics.find(m => m.code === clean) : null;
     if (magic) {
-      // success: flash + vib + modal
+      // ensure success visual + persist + modal
       playSuccessEffect();
-      // persist learned magic like earlier behavior
       try {
         let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
         if (!myMagics.includes(magic.id)) {
@@ -402,11 +400,39 @@ function handleSuccess(mode, text) {
     }
   }
 
-  // fallback
   showOverlayMessage("未対応の読み取りです", 'error', 2000);
 }
 
-/* modal show/hide */
+/* modal functions */
+/* Cancel: close modal and return to scanning, show red pop */
+function cancelModal() {
+  document.getElementById('result-modal').style.display = 'none';
+  document.body.classList.remove('modal-open');
+
+  // show a quick red pop to indicate cancelled
+  playErrorEffect();
+  showOverlayMessage("取得をキャンセルしました", 'error', 2000);
+
+  // reset scanning state so user can re-scan
+  scanArmed = false;
+  lastResult = null;
+  const st = document.getElementById('status-msg');
+  st.classList.remove('ready');
+  st.innerText = currentMode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
+}
+
+/* Confirm/OK: persist and return to index (original behavior) */
+function confirmAndReturn() {
+  document.getElementById('result-modal').style.display = 'none';
+  document.body.classList.remove('modal-open');
+
+  // short visual to emphasize success
+  playSuccessEffect();
+
+  // redirect back (original app flow)
+  setTimeout(()=> { location.href = "index.html"; }, 260);
+}
+
 function showModal(title, name, desc) {
   document.getElementById('modal-title').innerText = title;
   document.getElementById('modal-name').innerText = name;
@@ -415,12 +441,8 @@ function showModal(title, name, desc) {
   document.body.classList.add('modal-open');
 }
 
-function closeModal() {
-  document.body.classList.remove('modal-open');
-  location.href = "index.html";
-}
-
 window.onload = loadData;
 </script>
+
 </body>
 </html>
