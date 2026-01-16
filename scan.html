@@ -192,7 +192,7 @@ body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
     <div id="modal-name" class="modal-name">魔法名</div>
     <div id="modal-desc" class="modal-desc">説明文</div>
 
-    <!-- OK: confirm and return to index.html -->
+    <!-- OK: confirm and return to index -->
     <button class="modal-cta" id="modal-ok" onclick="confirmAndReturn()">閉じるして元に戻る</button>
     <!-- Cancel: close modal and return to scan screen with red pop -->
     <div><a href="#" class="modal-cancel" onclick="cancelModal(); return false;">キャンセル</a></div>
@@ -201,9 +201,7 @@ body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
 
 <script>
 /* Camera + UI logic */
-/* Maintains prior behavior; adds overlay pop, success/error flashes, vibration,
-   and changes modal cancel behavior to return to scan (with red pop). */
-
+/* Ensures flash -> delay -> modal/redirect behavior */
 let html5QrCode;
 let cameras = [];
 let cameraIndex = 0;
@@ -215,10 +213,11 @@ let gameData = null;
 let overlayTimer = null;
 let flashTimer = null;
 
+/* overlay message in camera area */
 function showOverlayMessage(msg, type = 'error', duration = 3000) {
   const el = document.getElementById('overlay-msg');
   clearTimeout(overlayTimer);
-  el.className = ''; // reset classes
+  el.className = '';
   el.innerText = msg;
   el.classList.add('show');
   if (type === 'error') el.classList.add('error');
@@ -231,6 +230,7 @@ function showOverlayMessage(msg, type = 'error', duration = 3000) {
   }, duration);
 }
 
+/* flashes and vibrations */
 function playSuccessEffect() {
   const flash = document.getElementById('success-flash');
   clearTimeout(flashTimer);
@@ -238,7 +238,7 @@ function playSuccessEffect() {
   if (navigator.vibrate) {
     try { navigator.vibrate(60); } catch(e) {}
   }
-  flashTimer = setTimeout(() => flash.classList.remove('show'), 220);
+  flashTimer = setTimeout(() => flash.classList.remove('show'), 320);
 }
 
 function playErrorEffect() {
@@ -248,9 +248,10 @@ function playErrorEffect() {
   if (navigator.vibrate) {
     try { navigator.vibrate([30,20,30]); } catch(e){}
   }
-  flashTimer = setTimeout(() => ef.classList.remove('show'), 450);
+  flashTimer = setTimeout(() => ef.classList.remove('show'), 520);
 }
 
+/* load data and cameras */
 async function loadData() {
   try {
     const res = await fetch('magics.json');
@@ -273,12 +274,13 @@ async function loadData() {
   startScanner('barcode');
 }
 
+/* start scanning */
 async function startScanner(mode) {
   currentMode = mode;
   lastResult = null;
   scanArmed = false;
 
-  // hide overlay if any
+  // hide overlay
   const ov = document.getElementById('overlay-msg');
   ov.className = '';
 
@@ -323,7 +325,7 @@ async function startScanner(mode) {
         }
       },
       (err) => {
-        // per-frame errors ignored
+        // ignore per-frame errors
       }
     );
   } catch (err) {
@@ -332,6 +334,7 @@ async function startScanner(mode) {
   }
 }
 
+/* camera switching */
 function switchCamera() {
   if (!cameras || cameras.length === 0) {
     showOverlayMessage("カメラが複数見つかりません", 'error', 1800);
@@ -341,6 +344,7 @@ function switchCamera() {
   startScanner(currentMode);
 }
 
+/* user pressed confirm scan button */
 function pressScan() {
   if (!scanArmed || !lastResult) {
     const s = document.getElementById('status-msg');
@@ -350,36 +354,61 @@ function pressScan() {
     return;
   }
 
-  // Handle result (success or not) — effects handled in handleSuccess
+  // handle success (async)
   handleSuccess(currentMode, lastResult);
 }
 
-function handleSuccess(mode, text) {
+/* core: handle success for both barcode and qr.
+   Ensures: stop scanner -> play flash -> delay -> modal/redirect or error handling.
+*/
+async function handleSuccess(mode, text) {
   const clean = (text || '').replace(/\*/g, "");
+
+  // Stop scanner immediately to avoid double reads / camera flicker
+  try {
+    if (html5QrCode) await html5QrCode.stop();
+  } catch (e) {
+    // ignore
+  }
+
+  // Success path for QR (MEDIA:)
   if (mode === 'qr') {
     if (clean.startsWith("MEDIA:")) {
       const id = clean.split(":")[1] || "";
       if (id) {
+        // visual feedback THEN redirect after delay
         playSuccessEffect();
-        try { localStorage.setItem('currentMedia', id); } catch(e){}
-        document.getElementById('status-msg').innerText = "媒体を接続しました...";
-        setTimeout(()=> { location.href = "index.html"; }, 600);
+        // save media and wait before redirect to give the flash time
+        setTimeout(() => {
+          try { localStorage.setItem('currentMedia', id); } catch(e){}
+          // small delay to let UI settle
+          setTimeout(()=> { location.href = "index.html"; }, 180);
+        }, 450); // flash duration delay
         return;
       }
     }
+    // not found
     playErrorEffect();
     showOverlayMessage("媒体データが見つかりませんでした", 'error', 3000);
-    scanArmed = false; lastResult = null;
-    document.getElementById('status-msg').classList.remove('ready');
-    document.getElementById('status-msg').innerText = "QRコードを探索中...";
+    // reset scanning state and restart scanner after a short delay to allow user to see error
+    setTimeout(() => {
+      scanArmed = false; lastResult = null;
+      const st = document.getElementById('status-msg');
+      st.classList.remove('ready');
+      st.innerText = "QRコードを探索中...";
+      // restart scanner
+      startScanner('qr');
+    }, 800);
     return;
   }
 
+  // barcode mode
   if (mode === 'barcode') {
     const magic = (gameData && gameData.magics) ? gameData.magics.find(m => m.code === clean) : null;
     if (magic) {
-      // ensure success visual + persist + modal
+      // play flash/vib, then after a short delay show modal (gives "read" sensation)
       playSuccessEffect();
+      // persist learned magic now (so modal shows consistent state)
       try {
         let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
         if (!myMagics.includes(magic.id)) {
@@ -387,20 +416,29 @@ function handleSuccess(mode, text) {
           localStorage.setItem('myMagics', JSON.stringify(myMagics));
         }
       } catch (e) {}
-      showModal("DATA ACQUIRED", magic.name, magic.desc);
+      // delay before showing modal
+      setTimeout(() => {
+        showModal("DATA ACQUIRED", magic.name, magic.desc);
+      }, 450);
       return;
     } else {
+      // not found: show error flash + overlay; then restart scanning
       playErrorEffect();
       showOverlayMessage("魔法コードが見つかりませんでした", 'error', 3000);
-      scanArmed = false; lastResult = null;
-      const statusEl = document.getElementById('status-msg');
-      statusEl.classList.remove('ready');
-      statusEl.innerText = "バーコードを探索中...";
+      setTimeout(() => {
+        scanArmed = false; lastResult = null;
+        const statusEl = document.getElementById('status-msg');
+        statusEl.classList.remove('ready');
+        statusEl.innerText = "バーコードを探索中...";
+        startScanner('barcode');
+      }, 800);
       return;
     }
   }
 
+  // fallback
   showOverlayMessage("未対応の読み取りです", 'error', 2000);
+  setTimeout(()=> startScanner(mode), 700);
 }
 
 /* modal functions */
@@ -413,23 +451,20 @@ function cancelModal() {
   playErrorEffect();
   showOverlayMessage("取得をキャンセルしました", 'error', 2000);
 
-  // reset scanning state so user can re-scan
+  // reset scanning state and restart scanner shortly
   scanArmed = false;
   lastResult = null;
   const st = document.getElementById('status-msg');
   st.classList.remove('ready');
   st.innerText = currentMode === 'qr' ? "QRコードを探索中..." : "バーコードを探索中...";
+  setTimeout(()=> startScanner(currentMode), 500);
 }
 
 /* Confirm/OK: persist and return to index (original behavior) */
 function confirmAndReturn() {
   document.getElementById('result-modal').style.display = 'none';
   document.body.classList.remove('modal-open');
-
-  // short visual to emphasize success
-  playSuccessEffect();
-
-  // redirect back (original app flow)
+  // short pause so modal hide is visible
   setTimeout(()=> { location.href = "index.html"; }, 260);
 }
 
@@ -443,6 +478,5 @@ function showModal(title, name, desc) {
 
 window.onload = loadData;
 </script>
-
 </body>
 </html>
