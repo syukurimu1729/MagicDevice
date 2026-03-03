@@ -38,7 +38,18 @@
             margin-bottom: 20px; background: var(--panel-bg); backdrop-filter: blur(10px);
             box-shadow: var(--glow-red), inset 0 0 20px rgba(0,0,0,0.5);
             transition: all 0.5s ease; width: 100%; box-sizing: border-box;
+            position: relative;
         }
+
+        /* 戻るボタンのスタイル */
+        .btn-undo {
+            position: absolute; top: 10px; right: 15px;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.3);
+            color: #fff; font-size: 0.6rem; padding: 4px 8px; border-radius: 4px;
+            cursor: pointer; transition: 0.3s; letter-spacing: 1px;
+        }
+        .btn-undo:active { transform: scale(0.9); }
+        .btn-undo.disabled { opacity: 0; pointer-events: none; }
 
         .img-container {
             width: 100%; max-width: 300px; aspect-ratio: 1 / 1; margin: 10px auto;
@@ -121,6 +132,7 @@
     <h1>ANOMALY DETECTOR</h1>
 
     <div class="panel">
+        <button id="undo-button" class="btn-undo disabled" onclick="undoMagic()">UNDO</button>
         <h2 id="media-title" style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 0.1rem;">SIGNAL LOST</h2>
         <div id="img-area" class="img-container hidden">
             <img id="display-img" src="" onclick="openModal()">
@@ -160,6 +172,7 @@
 
     <script>
         let gameData = null;
+        let history = []; // 遷移履歴を保存する配列
 
         async function init() {
             try {
@@ -184,8 +197,9 @@
             const select = document.getElementById('magic-select');
             const noMagicMsg = document.getElementById('no-magic-msg');
             const reverseUi = document.getElementById('reverse-ui');
+            const undoBtn = document.getElementById('undo-button');
 
-            // 1. 魔法プルダウンの更新
+            // 1. 魔法プルダウン
             select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
             let hasMagic = false;
             gameData.magics.forEach(m => {
@@ -210,17 +224,21 @@
 
             if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
 
-            // 2. 媒体データの反映と画像の表示制御
+            // 2. 媒体データの反映
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
-                mediaTitle.innerText = "ANALYZING..."; // 「CONNECTED: ID」を隠して雰囲気重視の表記に
+                mediaTitle.innerText = "ANALYZING...";
                 displayImg.src = "assets/media/" + data.default_img;
-                imgArea.classList.remove('hidden'); // 接続中なら表示
+                imgArea.classList.remove('hidden');
             } else {
                 mediaTitle.innerText = "SIGNAL LOST";
-                imgArea.classList.add('hidden'); // 未接続なら非表示（無の画像をださない）
+                imgArea.classList.add('hidden');
                 displayImg.src = ""; 
             }
+
+            // UNDOボタンの表示制御
+            if (history.length > 0) undoBtn.classList.remove('disabled');
+            else undoBtn.classList.add('disabled');
         }
 
         function castMagic() {
@@ -229,17 +247,12 @@
             const isReverse = document.getElementById('reverse-switch').checked;
             const resultText = document.getElementById('result-text');
             const displayImg = document.getElementById('display-img');
+            const urlAction = document.getElementById('url-action');
+            const jumpLink = document.getElementById('jump-link');
 
-            if (!magicId) {
-                resultText.innerText = "魔法を選択してください";
-                return;
-            }
+            if (!magicId || !mediaId || !gameData.media_data[mediaId]) return;
 
-            if (!mediaId || !gameData.media_data[mediaId]) {
-                resultText.innerText = "対象が存在しません。スキャンを行ってください。";
-                return;
-            }
-
+            // アニメーション
             displayImg.classList.remove('img-anim');
             void displayImg.offsetWidth;
             displayImg.classList.add('img-anim');
@@ -248,21 +261,44 @@
             const media = gameData.media_data[mediaId];
             const effect = (media.effects && media.effects[targetKey]) ? media.effects[targetKey] : null;
             
-            const urlAction = document.getElementById('url-action');
-            const jumpLink = document.getElementById('jump-link');
             urlAction.classList.add('hidden');
 
             if (effect) {
+                // 履歴に保存（元に戻すため）
+                history.push(mediaId);
+
                 resultText.innerText = effect.res;
                 displayImg.src = "assets/media/" + effect.img;
+
+                // URLテキストとリンクの処理
                 if (effect.url) {
                     jumpLink.href = effect.url;
+                    jumpLink.innerText = effect.url_text ? effect.url_text : "空間転送を開始する";
                     urlAction.classList.remove('hidden');
+                }
+
+                // IDの動的変更（next_idがある場合）
+                if (effect.next_id && gameData.media_data[effect.next_id]) {
+                    localStorage.setItem('currentMedia', effect.next_id);
+                    // UI全体を更新（タイトルなどは新しいIDのものになる）
+                    setTimeout(updateUI, 500); 
+                } else {
+                    updateUI(); // UNDOボタンなどの更新
                 }
             } else {
                 resultText.innerText = "何も起きなかったようだ...";
                 displayImg.src = "assets/media/" + media.default_img;
             }
+        }
+
+        // 直前のIDに戻す関数
+        function undoMagic() {
+            if (history.length === 0) return;
+            const lastId = history.pop();
+            localStorage.setItem('currentMedia', lastId);
+            document.getElementById('result-text').innerText = "現象が巻き戻された...";
+            document.getElementById('url-action').classList.add('hidden');
+            updateUI();
         }
 
         function openModal() {
