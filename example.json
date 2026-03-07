@@ -45,6 +45,31 @@
           "img": "qr_error.jpg"
         }
       }
-    }
+    },
+    "BOOK_CLOSED": {
+      "default_img": "book_closed.jpg",
+      "effects": {
+        "Connect": {
+          "res": "本が強力に接着され、二度と開かなくなった！",
+          "img": "book_glued.jpg"
+        },
+        "Color": {
+          "res": "表紙が鮮やかになり、ページをめくる準備が整った。",
+          "img": "book_ready.jpg",
+          "next_id": "BOOK_OPENED" 
+        }
+      }
+    },
+    "BOOK_OPENED": {
+      "default_img": "book_open.jpg",
+      "effects": {
+        "Color": {
+          "res": "秘密の地図が浮かび上がった！",
+          "img": "map_reveal.jpg",
+          "url": "https://...",
+          "url_text": "古の地図を解読する" 
+        }
+      }
+    },
   }
 }
