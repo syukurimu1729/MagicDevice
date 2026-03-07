@@ -13,12 +13,6 @@
       "desc": "重ねたものに使うと、それがつながって離れなくなる"
     },
     {
-      "id": "Align",
-      "code": "697657",
-      "name": "そろえる魔法",
-      "desc": "ばらばらになったものに使うときれいにそろう"
-    },
-    {
       "id": "Reverse",
       "code": "49177008",
       "name": "反転魔法",
@@ -33,12 +27,11 @@
     {
       "id": "Hint",
       "code": "151213",
-      "name": "つける魔法",
-      "desc": "「つける」ことならなんでもできる"
+      "name": "ヒントの魔法",
+      "desc": "この謎を解くヒントが得られる"
     }
   ],
   "media_data": {
-
     "CASTER_PUZZLE_ORIGIN": {
       "default_img": "使用者_元.jpg",
       "effects": {
@@ -76,6 +69,26 @@
       "effects": {
         "Hint": {
           "res": "赤と青を混ぜると...?"
+        }
+      }
+    },
+    "MEDIUM_PUZZLE_ORIGIN": {
+      "default_img": "媒体_元.jpg",
+      "effects": {
+        "Hint": {
+          "res": "この文字を正しく繋げられれば...?"
+        },
+        "Apply": {
+          "res": "文字を正しく繋げることができた！",
+          "next_id": "MEDIUM_PUZZLE_CONNECTED"
+        }
+      }
+    },
+    "MEDIUM_PUZZLE_CONNECTED": {
+      "default_img": "媒体_そろえた後.jpg",
+      "effects": {
+        "Hint": {
+          "res": "左から右に読んでわからないときは、上から下へと読もう"
         }
       }
     }
