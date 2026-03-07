@@ -21,53 +21,61 @@
     {
       "id": "Reverse",
       "code": "49177008",
-      "name": "反転の理",
-      "desc": "世界の理を逆転させる。全ての魔法は逆の効果をもたらすだろう。"
+      "name": "反転魔法",
+      "desc": "すべての魔法の効果を反転させる"
+    },
+    {
+      "id": "Apply",
+      "code": "612316",
+      "name": "つける魔法",
+      "desc": "「つける」ことならなんでもできる"
+    },
+    {
+      "id": "Hint",
+      "code": "151213",
+      "name": "つける魔法",
+      "desc": "「つける」ことならなんでもできる"
     }
   ],
   "media_data": {
-    "SAMPLE_BOOK": {
-      "default_img": "book_gray.jpg",
+
+    "CASTER_PUZZLE_ORIGIN": {
+      "default_img": "使用者_元.jpg",
       "effects": {
-        "Color": { "res": "本に色彩が宿り、隠されていた文字が浮かび上がった！", "img": "book_color.jpg" }
-      }
-    },
-    "QR_SECRET": {
-      "default_img": "qr_damaged.jpg",
-      "effects": {
-        "Color": { 
-          "res": "魔法によってQRコードが修復され、データの復元に成功した！", 
-          "img": "qr_fixed.jpg",
-          "url": "https://example.com/secret-room" 
+        "Apply": {
+          "res": "番号をつけることができた！",
+          "next_id": "CASTER_PUZZLE_APPLYED" 
         },
-        "Color_rev": {
-          "res": "反転した色彩がQRをさらに汚染し、修復不能になった...",
-          "img": "qr_error.jpg"
+        "Hint": {
+          "res": "何かを「つける」ことができれば..."
         }
       }
     },
-    "BOOK_CLOSED": {
-      "default_img": "book_closed.jpg",
+    "CASTER_PUZZLE_APPLYED": {
+      "default_img": "使用者_つける.jpg",
       "effects": {
-        "Connect": {
-          "res": "本が強力に接着され、二度と開かなくなった！",
-          "img": "book_glued.jpg"
-        },
-        "Color": {
-          "res": "表紙が鮮やかになり、ページをめくる準備が整った。",
-          "img": "book_ready.jpg",
-          "next_id": "BOOK_OPENED" 
+        "Hint": {
+          "res": "この机の並び、どこかで...?"
         }
       }
     },
-    "BOOK_OPENED": {
-      "default_img": "book_open.jpg",
+    "MAGICNAME_PUZZLE_ORIGIN": {
+      "default_img": "名前_元.jpg",
       "effects": {
         "Color": {
-          "res": "秘密の地図が浮かび上がった！",
-          "img": "map_reveal.jpg",
-          "url": "https://...",
-          "url_text": "古の地図を解読する" 
+          "res": "色をつけることができた！",
+          "next_id": "MAGICNAME_PUZZLE_COLORED"
+        },
+        "Hint": {
+          "res": "この机の並び、どこかで...?"
+        }
+      }
+    },
+    "MAGICNAME_PUZZLE_COLORED": {
+      "default_img": "名前_色.jpg",
+      "effects": {
+        "Hint": {
+          "res": "赤と青を混ぜると...?"
         }
       }
     }
