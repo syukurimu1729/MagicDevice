@@ -233,6 +233,18 @@
           "res": "それぞれの規則を順にあてはめれば...？"
         }
       }
+    },
+    "CONNECTION_ORIGIN": {
+      "default_img": "CONNORIGIN.jpg",
+      "effects": {
+        "Hint": {
+          "res": "これにつなげる魔法を使ってみると...？"
+        },
+        "Connect": {
+          "img": "CONNECTED.jpg",
+          "res": "矢印をつなげることができた！"
+        }
+      }
     }
   }
 }
