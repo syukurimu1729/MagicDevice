@@ -48,7 +48,7 @@
       "default_img": "使用者_つける.jpg",
       "effects": {
         "Hint": {
-          "res": "この机の並び、どこかで...?"
+          "res": "この机の並び、どこかで...？"
         }
       }
     },
@@ -60,7 +60,7 @@
           "next_id": "MAGICNAME_PUZZLE_COLORED"
         },
         "Hint": {
-          "res": "色が消えてしまっているようだ...?"
+          "res": "色が消えてしまっているようだ...？"
         }
       }
     },
@@ -76,7 +76,7 @@
       "default_img": "媒体_元.jpg",
       "effects": {
         "Hint": {
-          "res": "この文字を正しく繋げられれば...?"
+          "res": "この文字を正しく繋げられれば...？"
         },
         "Apply": {
           "res": "文字を正しく繋げることができた！",
@@ -124,6 +124,115 @@
       "default_img": "魔法陣_数字.jpg",
       "url": "https://syukurimu1729.github.io/FlowConnect/numgame.html",
       "url_text": "魔法陣を展開する"
+    },
+    "RULES_ONE_ORIGIN": {
+      "default_img": "RULEONE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "カメラ→カメ。最後が消えてる...？"
+        }
+      }
+    },
+    "RULES_TWO_ORIGIN": {
+      "default_img": "RULETWO.jpg",
+      "effects": {
+        "Hint": {
+          "res": "イカ→カイ。逆から読むと...？"
+        }
+      }
+    },
+    "RULES_FOUR_ORIGIN": {
+      "default_img": "RULEFOUR.jpg",
+      "effects": {
+        "Hint": {
+          "res": "カギ→カキ。濁点が...？"
+        }
+      }
+    },
+    "MAGICPAGES_ONE_ORIGIN": {
+      "default_img": "MAGICPAGESONE.jpg",
+      "effects": {
+      }
+    },
+    "THREES_ONE_ORIGIN": {
+      "default_img": "THREESONE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "50音表で考えてみると...？"
+        }
+      }
+    },
+    "THREES_TWO_ORIGIN": {
+      "default_img": "THREESTWO.jpg",
+      "effects": {
+        "Hint": {
+          "res": "26といえば、アルファベット...？"
+        }
+      }
+    },
+    "THREES_THREE_ORIGIN": {
+      "default_img": "THREESTWO.jpg",
+      "effects": {
+        "Hint": {
+          "res": "47といえば、都道府県...？"
+        }
+      }
+    },
+    "MINI_ONE_ORIGIN": {
+      "default_img": "MINIONE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "この配置、スマホで見たような？"
+        }
+      }
+    },
+    "MINI_TWO_ORIGIN": {
+      "default_img": "MINITWO.jpg",
+      "effects": {
+        "Hint": {
+          "res": "左からかぐ、らっぱ、ぼうし、かん、どみのを割り当てると？"
+        }
+      }
+    },
+    "MINI_THREE_ORIGIN": {
+      "default_img": "MINITHREE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "左側で書けているのは？"
+        }
+      }
+    },
+    "MINI_FOUR_ORIGIN": {
+      "default_img": "MINIFOUR.jpg",
+      "effects": {
+        "Hint": {
+          "res": "矢印で四角同士を比較しているみたい。前の逆は後ろ？"
+        }
+      }
+    },
+    "SEAT_ORIGIN": {
+      "default_img": "SEAT.jpg",
+      "effects": {
+        "Hint": {
+          "res": "机の配置が、何か規則性を持ってそう？"
+        }
+      }
+    },
+    "CUP_ORIGIN": {
+      "default_img": "CUP.jpg",
+      "effects": {
+        "Hint": {
+          "res": "ペンの個数に意味がありそう？"
+        }
+      }
+    },
+    "ARROW_ORIGIN": {
+      "default_img": "ARROW.jpg",
+      "effects": {
+        "Hint": {
+          "res": "それぞれの規則を順にあてはめれば...？"
+        }
+      }
     }
   }
 }
