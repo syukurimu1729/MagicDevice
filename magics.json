@@ -91,6 +91,39 @@
           "res": "左から右に読んでわからないときは、上から下へと読もう"
         }
       }
+    },
+    "FORMGAME": {
+      "default_img": "魔法陣.jpg",
+      "url": "https://syukurimu1729.github.io/FlowConnect/",
+      "url_text": "魔法陣を展開する",
+      "effects": {
+        "Hint": {
+          "res": "色がついていると、絶対にクリアできなさそうだ..."
+        },
+        "Color_rev": {
+          "res": "色が消えて好きにつなげられるようになった！",
+          "next_id": "FORMGAME_MONO"
+        }
+      }
+    },
+    "FORMGAME_MONO": {
+      "default_img": "魔法陣_モノ.jpg",
+      "url": "https://syukurimu1729.github.io/FlowConnect/monogame.html",
+      "url_text": "魔法陣を展開する",
+      "effects": {
+        "Hint": {
+          "res": "まだ数字がつけられていないようだ..."
+        },
+        "Apply": {
+          "res": "数字がついて正しい順番がわかった！",
+          "next_id": "FORMGAME_INT"
+        }
+      }
+    },
+    "FORMGAME_INT": {
+      "default_img": "魔法陣_数字.jpg",
+      "url": "https://syukurimu1729.github.io/FlowConnect/numgame.html",
+      "url_text": "魔法陣を展開する"
     }
   }
 }

@@ -41,7 +41,6 @@
             position: relative;
         }
 
-        /* 戻るボタンのスタイル */
         .btn-undo {
             position: absolute; top: 10px; right: 15px;
             background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.3);
@@ -51,14 +50,12 @@
         .btn-undo:active { transform: scale(0.9); }
         .btn-undo.disabled { opacity: 0; pointer-events: none; }
 
-        /* 変更: コンテナを画像サイズに合わせる（正方形固定をやめる） */
         .img-container {
             display: inline-block;
             max-width: 90%;
             margin: 10px auto;
             border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
             background: rgba(0,0,0,0.3); position: relative;
-            /* width と aspect-ratio は削除して、画像の実サイズに合わせる */
         }
 
         #display-img { 
@@ -122,9 +119,12 @@
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
             text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-            width: 100%; max-width: 300px; height: 50px; margin-top: 15px;
+            width: 100%; max-width: 300px; min-height: 50px; margin-top: 15px;
+            padding: 10px; box-sizing: border-box;
             font-size: 0.85rem; font-weight: bold; border-radius: 12px; color: white;
+            transition: 0.2s;
         }
+        .btn-url:active { transform: scale(0.95); }
 
         .btn-scan { text-decoration: none; display: inline-block; margin: 20px 0; color: var(--accent-red); font-size: 0.9rem; border-bottom: 1px solid var(--accent-red); }
         
@@ -179,7 +179,7 @@
 
     <script>
         let gameData = null;
-        let history = []; // 遷移履歴を保存する配列
+        let history = []; 
 
         async function init() {
             try {
@@ -205,8 +205,10 @@
             const noMagicMsg = document.getElementById('no-magic-msg');
             const reverseUi = document.getElementById('reverse-ui');
             const undoBtn = document.getElementById('undo-button');
+            const urlAction = document.getElementById('url-action');
+            const jumpLink = document.getElementById('jump-link');
 
-            // 1. 魔法プルダウン
+            // 1. 魔法プルダウンの更新
             select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
             let hasMagic = false;
             gameData.magics.forEach(m => {
@@ -231,19 +233,28 @@
 
             if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
 
-            // 2. 媒体データの反映
+            // 2. 媒体データの反映とボタンの即時表示
+            urlAction.classList.add('hidden'); // 一旦リセット
+
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
                 mediaTitle.innerText = "ANALYZING...";
                 displayImg.src = "assets/media/" + data.default_img;
                 imgArea.classList.remove('hidden');
+
+                // --- 修正箇所：読み込んだデータにurlがあればボタンを表示 ---
+                if (data.url) {
+                    jumpLink.href = data.url;
+                    jumpLink.innerText = data.url_text ? data.url_text : "空間転送を開始する";
+                    urlAction.classList.remove('hidden');
+                }
             } else {
                 mediaTitle.innerText = "SIGNAL LOST";
                 imgArea.classList.add('hidden');
                 displayImg.src = ""; 
             }
 
-            // UNDOボタンの表示制御
+            // UNDOボタン
             if (history.length > 0) undoBtn.classList.remove('disabled');
             else undoBtn.classList.add('disabled');
         }
@@ -259,7 +270,6 @@
 
             if (!magicId || !mediaId || !gameData.media_data[mediaId]) return;
 
-            // アニメーション
             displayImg.classList.remove('img-anim');
             void displayImg.offsetWidth;
             displayImg.classList.add('img-anim');
@@ -268,43 +278,36 @@
             const media = gameData.media_data[mediaId];
             const effect = (media.effects && media.effects[targetKey]) ? media.effects[targetKey] : null;
             
-            urlAction.classList.add('hidden');
-
             if (effect) {
-                // 履歴に保存（元に戻すため）
-                history.push(mediaId);
-
+                history.push(mediaId); // 履歴保存
                 resultText.innerText = effect.res;
                 displayImg.src = "assets/media/" + effect.img;
 
-                // URLテキストとリンクの処理
+                // 魔法効果でURLが設定されている場合（優先）
                 if (effect.url) {
                     jumpLink.href = effect.url;
                     jumpLink.innerText = effect.url_text ? effect.url_text : "空間転送を開始する";
                     urlAction.classList.remove('hidden');
                 }
 
-                // IDの動的変更（next_idがある場合）
                 if (effect.next_id && gameData.media_data[effect.next_id]) {
                     localStorage.setItem('currentMedia', effect.next_id);
-                    // UI全体を更新（タイトルなどは新しいIDのものになる）
                     setTimeout(updateUI, 500); 
                 } else {
-                    updateUI(); // UNDOボタンなどの更新
+                    updateUI();
                 }
             } else {
                 resultText.innerText = "何も起きなかったようだ...";
-                displayImg.src = "assets/media/" + media.default_img;
+                // エフェクトがなくても現在のIDの設定に基づいてUIを更新
+                setTimeout(updateUI, 500);
             }
         }
 
-        // 直前のIDに戻す関数
         function undoMagic() {
             if (history.length === 0) return;
             const lastId = history.pop();
             localStorage.setItem('currentMedia', lastId);
             document.getElementById('result-text').innerText = "現象が巻き戻された...";
-            document.getElementById('url-action').classList.add('hidden');
             updateUI();
         }
 
