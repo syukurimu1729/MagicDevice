@@ -1,402 +1,418 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>魔法スキャナー</title>
-<script src="https://unpkg.com/html5-qrcode"></script>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>バーコード / QR 同一モード読み取りデモ</title>
 <style>
-:root{
-  --accent-red:#ff2d55;
-  --ready-green:#00ffcc;
-  --bg-dark:#0d0d1a;
-  --panel-dark:#0f1120;
-  --glow-red:0 0 18px rgba(255,45,85,0.5);
-  --glow-green:0 0 18px rgba(0,255,204,0.45);
-  --controls-h:180px;
-}
-
-/* reset */
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
-  background:#000;
-  color:#e6e9ff;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  min-height:100svh;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  -webkit-font-smoothing:antialiased;
-}
-
-/* camera area */
-#reader-wrapper{
-  position:relative;
-  width:100%;
-  height: calc(100dvh - var(--controls-h));
-  max-height: calc(100dvh - var(--controls-h));
-  overflow:hidden;
-  background:#000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-#reader{ width:100%!important; height:100%!important; max-width:900px; }
-#reader video{ width:100%!important; height:100%!important; object-fit:cover!important; display:block; }
-
-#flash-layer{ position:absolute; inset:0; pointer-events:none; z-index:150; }
-#success-flash {
-  position:absolute; inset:0; background: rgba(0,255,204,0.10);
-  mix-blend-mode: screen; opacity:0; pointer-events:none; z-index:160;
-  transition: opacity 160ms ease-out;
-  box-shadow: inset 0 0 80px rgba(0,255,204,0.12);
-}
-#success-flash.show { opacity:1; transition: opacity 120ms ease-in; }
-
-#error-flash {
-  position:absolute; inset:0; background: rgba(255,45,85,0.10);
-  mix-blend-mode: screen; opacity:0; pointer-events:none; z-index:160;
-  transition: opacity 200ms ease-out;
-  box-shadow: inset 0 0 80px rgba(255,45,85,0.10);
-}
-#error-flash.show { opacity:1; transition: opacity 120ms ease-in; }
-
-/* HUD corners (red frame) */
-.hud-corner {
-  position:absolute; width:30px; height:30px;
-  border:2px solid var(--accent-red); filter:drop-shadow(var(--glow-red));
-  z-index:140; transition: opacity .18s ease, transform .18s ease;
-  opacity:1;
-}
-body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
-.top-left{ top:16px; left:16px; border-right:none; border-bottom:none; }
-.top-right{ top:16px; right:16px; border-left:none; border-bottom:none; }
-.bottom-left{ bottom:16px; left:16px; border-right:none; border-top:none; }
-.bottom-right{ bottom:16px; right:16px; border-left:none; border-top:none; }
-
-/* overlay message */
-#overlay-msg {
-  position:absolute;
-  top:10%;
-  left:50%;
-  transform: translateX(-50%) translateY(-8px) scale(.98);
-  background: rgba(6,10,20,0.85);
-  color:#ffdfe8;
-  padding:10px 14px;
-  border-radius:12px;
-  border:1px solid rgba(255,45,85,0.12);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
-  z-index:170;
-  opacity:0;
-  pointer-events:none;
-  min-width: 220px;
-  max-width: 88%;
-  text-align:center;
-  transition: opacity .22s ease, transform .22s ease;
-  font-weight:600;
-  font-size:0.95rem;
-}
-#overlay-msg.show { opacity:1; transform: translateX(-50%) translateY(0) scale(1); }
-#overlay-msg.error { border-color: rgba(255,45,85,0.28); color:#ffdfe8; background: linear-gradient(180deg, rgba(24,6,10,0.92), rgba(6,2,4,0.8)); }
-#overlay-msg.success { border-color: rgba(0,255,204,0.18); color:#002f26; background: linear-gradient(180deg, rgba(0,255,204,0.12), rgba(0,20,12,0.08)); }
-
-/* controls (bottom) */
-.controls{
-  width:100%;
-  background:var(--panel-dark);
-  border-top:1px solid rgba(255,45,85,0.06);
-  padding:18px 16px calc(22px + env(safe-area-inset-bottom));
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.6);
-}
-#status-msg{ font-size:.85rem; color:#9aa3b2; letter-spacing:.08em; transition: color .18s ease, text-shadow .18s ease; min-height:1.1em; text-align:center; }
-#status-msg.ready{ color: var(--ready-green); text-shadow: var(--glow-green); }
-
-/* button layout */
-.scan-control-group {
-  display: flex;
-  width: 100%;
-  max-width: 520px;
-  gap: 12px;
-}
-#scan-trigger{ flex: 1; height:56px; border-radius:14px; border:none; background: linear-gradient(135deg,var(--accent-red),#ff6a88); color:#fff; font-weight:800; font-size:1.05rem; box-shadow:var(--glow-red); cursor:pointer; }
-.switch-btn{ width:56px; height:56px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background: linear-gradient(180deg,#1c1c2e,#0a0a12); color:#fff; font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-
-/* cancel */
-.back-link{ color:#9aa3b2; text-decoration:none; font-size:.86rem; opacity:.95 }
-
-/* modal */
-#result-modal{ display:none; position:fixed; inset:0; background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.85)); z-index:999; justify-content:center; align-items:center; padding:22px; }
-.modal-card{ width:100%; max-width:520px; background: linear-gradient(180deg,#0f1030,#0b0b18); border-radius:20px; border:1px solid rgba(255,45,85,0.12); padding:22px; box-shadow: 0 10px 40px rgba(0,0,0,0.7), var(--glow-red); color:#e9ecff; text-align:center; }
-.modal-label{ font-size:.75rem; color:#9aa3b2; margin-bottom:8px; letter-spacing:.12em; }
-.modal-name{ font-size: clamp(1.4rem, 4.8vw, 2.4rem); color:var(--accent-red); font-weight:900; margin:6px 0 10px; text-shadow: 0 0 10px rgba(255,45,85,0.18); }
-.modal-desc{ font-size:1rem; color:#cfe7ff; line-height:1.45; margin-bottom:18px; min-height:3.2em; }
-.modal-cta{ width:100%; height:56px; border-radius:12px; border:none; font-weight:800; font-size:1rem; color:#061018; background: linear-gradient(135deg,#00ffd0,#00c2a8); box-shadow:var(--glow-green); cursor:pointer; margin-top:6px; }
-.modal-cancel{ margin-top:12px; display:inline-block; color:#ffdfe8; text-decoration:underline; cursor:pointer; }
-
-#reader__dashboard{ display:none!important; }
+  :root{
+    --bg:#0f1724;
+    --panel:#0b1220;
+    --text:#e6eef8;
+    --muted:#9fb0c8;
+    --accent:#60a5fa;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text)}
+  .wrap{max-width:980px;margin:24px auto;padding:20px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+  h1{margin:0 0 12px;font-size:18px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+  .video-container{position:relative;border-radius:8px;overflow:hidden;background:#000;min-height:360px;display:flex;align-items:center;justify-content:center}
+  video{width:100%;height:100%;object-fit:cover;background:#000}
+  .controls{display:flex;flex-direction:column;gap:12px;padding:8px}
+  .control-row{display:flex;gap:8px;align-items:center}
+  label{font-size:13px;color:var(--muted)}
+  select, button, .result-box{width:100%}
+  select,button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);font-size:14px}
+  button.primary{background:var(--accent);border:none;color:#04233b;font-weight:600}
+  .result{background:#061428;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);min-height:80px;display:flex;flex-direction:column;gap:6px}
+  .detected-text{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Noto Sans Mono", monospace;background:#031021;padding:8px;border-radius:6px;color:#bfe8ff;word-break:break-all}
+  .meta{font-size:12px;color:var(--muted)}
+  .small{font-size:13px;color:var(--muted)}
+  footer{margin-top:12px;font-size:12px;color:var(--muted)}
+  /* レスポンシブ */
+  @media (max-width:880px){
+    .grid{grid-template-columns:1fr; }
+    .controls{order:2}
+  }
 </style>
 </head>
 <body>
+  <div class="wrap" role="main">
+    <h1>バーコード &amp; QR 同時読み取り（分割モードなし）</h1>
+    <div class="grid">
+      <div>
+        <div class="video-container" id="videoWrapper">
+          <video id="video" playsinline autoplay muted></video>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button id="startBtn" class="primary">読み取り開始</button>
+          <button id="stopBtn">停止</button>
+          <button id="switchBtn">カメラ切替</button>
+        </div>
+      </div>
 
-<div id="reader-wrapper">
-  <div id="flash-layer"></div>
-  <div id="success-flash" aria-hidden="true"></div>
-  <div id="error-flash" aria-hidden="true"></div>
+      <aside class="controls" aria-label=" controls ">
+        <div class="control-row">
+          <label for="deviceSelect">カメラ選択</label>
+        </div>
+        <div class="control-row">
+          <select id="deviceSelect" aria-label="camera select"></select>
+        </div>
 
-  <div class="hud-corner top-left"></div>
-  <div class="hud-corner top-right"></div>
-  <div class="hud-corner bottom-left"></div>
-  <div class="hud-corner bottom-right"></div>
+        <div class="control-row">
+          <label class="small">検出中の値</label>
+        </div>
+        <div class="result">
+          <div class="meta">最新検出（リアルタイム）</div>
+          <div id="detected" class="detected-text">— まだ検出されていません —</div>
+          <div class="meta" id="formatInfo">フォーマット: —</div>
+        </div>
 
-  <div id="reader"></div>
-  <div id="overlay-msg" role="status" aria-live="polite"></div>
-</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="confirmBtn" class="primary">解析確定</button>
+          <button id="copyBtn">コピー</button>
+        </div>
 
-<div class="controls">
-  <div id="status-msg">SYSTEM READY</div>
+        <div style="margin-top:10px">
+          <div class="meta">ヒント: このモードはバーコードもQRも両方検出します。分割ボタンはありません（仕様変更）。</div>
+        </div>
+      </aside>
+    </div>
 
-  <div class="scan-control-group">
-    <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-    <button class="switch-btn" onclick="switchCamera()">🔄</button>
+    <footer>
+      <div>実装: ネイティブ <code>BarcodeDetector</code> を優先し、未対応ブラウザでは ZXing ライブラリにフォールバックします。</div>
+    </footer>
   </div>
-
-  <a href="index.html" class="back-link">CANCEL</a>
-</div>
-
-<div id="result-modal" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-label" id="modal-title">DATA ACQUIRED</div>
-    <div id="modal-name" class="modal-name">魔法名</div>
-    <div id="modal-desc" class="modal-desc">説明文</div>
-    <button class="modal-cta" id="modal-ok" onclick="confirmAndReturn()">閉じて元に戻る</button>
-    <div><a href="#" class="modal-cancel" onclick="cancelModal(); return false;">キャンセル</a></div>
-  </div>
-</div>
 
 <script>
-let html5QrCode;
-let cameras = [];
-let cameraIndex = 0;
-let lastResult = null;
-let lastFormat = null;
-let scanArmed = false;
-let gameData = null;
+/*
+  システム概要（日本語コメント）
+  - BarcodeDetector API が使える場合はそれを使って連続検出
+  - 使えない場合は ZXing の BrowserMultiFormatReader を動的読み込みして利用
+  - カメラ選択、カメラ切替（deviceId を巡回）、開始・停止、解析確定（確定ボタンで外向け処理）
+  - 赤い読み取り用UI（オーバーレイ）は出さない（ユーザー要望）
+  - 既知のフォーマットは自動判定して表示（formatInfo）
+*/
 
-let overlayTimer = null;
-let flashTimer = null;
+let video = document.getElementById('video');
+let deviceSelect = document.getElementById('deviceSelect');
+let detectedEl = document.getElementById('detected');
+let formatInfoEl = document.getElementById('formatInfo');
+let startBtn = document.getElementById('startBtn');
+let stopBtn = document.getElementById('stopBtn');
+let switchBtn = document.getElementById('switchBtn');
+let confirmBtn = document.getElementById('confirmBtn');
+let copyBtn = document.getElementById('copyBtn');
 
-function showOverlayMessage(msg, type = 'error', duration = 3000) {
-  const el = document.getElementById('overlay-msg');
-  clearTimeout(overlayTimer);
-  el.className = '';
-  el.innerText = msg;
-  el.classList.add('show');
-  if (type === 'error') el.classList.add('error');
-  else if (type === 'success') el.classList.add('success');
-  else el.classList.add('info');
+let currentStream = null;
+let currentDeviceId = null;
+let devices = [];
+let scanning = false;
 
-  overlayTimer = setTimeout(() => {
-    el.classList.remove('show');
-    el.className = '';
-  }, duration);
-}
+let barcodeDetector = null; // ネイティブ API 用
+let zxingReader = null;     // ZXing 用 fallback reader
+let zxingLoaded = false;
+let zxingScriptLoaded = false;
+let zxingModuleUrl = 'https://unpkg.com/@zxing/library@0.18.6/umd/index.min.js'; // フォールバック先（必要であれば変更）
 
-function playSuccessEffect() {
-  const flash = document.getElementById('success-flash');
-  clearTimeout(flashTimer);
-  flash.classList.add('show');
-  if (navigator.vibrate) {
-    try { navigator.vibrate(60); } catch(e) {}
+// 最新検出データ（UI 表示用）
+let latestDetection = { text: null, format: null, raw: null };
+
+// 初期化
+async function init() {
+  await enumerateCameras();
+  attachUI();
+  // BarcodeDetector が使えるか確認
+  if ('BarcodeDetector' in window) {
+    try{
+      const supported = await window.BarcodeDetector.getSupportedFormats();
+      // supported が空配列でも try してみる（ブラウザ実装差があるため）
+      barcodeDetector = new window.BarcodeDetector({formats: supported.length ? supported : [
+        'qr_code','code_128','code_39','code_93','ean_13','ean_8','itf','codabar','upc_e','upc_a'
+      ]});
+      console.log('BarcodeDetector ready', barcodeDetector);
+    }catch(e){
+      console.warn('BarcodeDetector initialisation failed', e);
+      barcodeDetector = null;
+    }
+  } else {
+    console.log('BarcodeDetector not available; will use ZXing fallback');
   }
-  flashTimer = setTimeout(() => flash.classList.remove('show'), 320);
 }
 
-function playErrorEffect() {
-  const ef = document.getElementById('error-flash');
-  clearTimeout(flashTimer);
-  ef.classList.add('show');
-  if (navigator.vibrate) {
-    try { navigator.vibrate([30,20,30]); } catch(e){}
-  }
-  flashTimer = setTimeout(() => ef.classList.remove('show'), 520);
-}
-
-async function loadData() {
+// カメラ列挙
+async function enumerateCameras(){
   try {
-    const res = await fetch('magics.json');
-    gameData = await res.json();
-  } catch (e) {
-    gameData = { magics: [], media_data: {} };
-  }
-
-  try {
-    cameras = await Html5Qrcode.getCameras();
-  } catch (e) {
-    cameras = [];
-  }
-
-  // 元のコードと同じ初期カメラ選択ロジック
-  const back = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
-  cameraIndex = back >= 0 ? back : 0;
-
-  startScanner();
-}
-
-async function startScanner() {
-  lastResult = null;
-  lastFormat = null;
-  scanArmed = false;
-
-  const ov = document.getElementById('overlay-msg');
-  ov.className = '';
-
-  const statusEl = document.getElementById('status-msg');
-  statusEl.classList.remove('ready');
-  statusEl.innerText = "コードを探索中...";
-
-  if (html5QrCode) await html5QrCode.stop().catch(()=>{});
-
-  html5QrCode = new Html5Qrcode("reader");
-
-  // QRとバーコードを同時に受け付ける設定
-  const formats = [
-    Html5QrcodeSupportedFormats.QR_CODE,
-    Html5QrcodeSupportedFormats.EAN_13,
-    Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.CODE_128,
-    Html5QrcodeSupportedFormats.CODE_39,
-    Html5QrcodeSupportedFormats.UPC_A,
-    Html5QrcodeSupportedFormats.UPC_E
-  ];
-
-  try {
-    // 元のコードのカメラ指定方式を復元しつつ、ピント調整を付与
-    await html5QrCode.start(
-      (cameras && cameras[cameraIndex]) ? cameras[cameraIndex].id : { facingMode: "environment" },
-      { 
-        fps: 15, 
-        formatsToSupport: formats,
-        // ピント調整用の設定
-        videoConstraints: {
-          advanced: [{ focusMode: "continuous" }]
-        }
-      },
-      (text, result) => {
-        lastResult = text;
-        lastFormat = result.result.format.formatName;
-        
-        if (!scanArmed) {
-          scanArmed = true;
-          const st = document.getElementById('status-msg');
-          st.classList.add('ready');
-          st.innerText = "解析確定可能";
-        }
-      },
-      (err) => {}
-    );
+    const devicesList = await navigator.mediaDevices.enumerateDevices();
+    devices = devicesList.filter(d => d.kind === 'videoinput');
+    deviceSelect.innerHTML = '';
+    devices.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      // device.label はカメラ許可前は空文字のことがある
+      opt.text = d.label || `カメラ ${i+1}`;
+      deviceSelect.appendChild(opt);
+    });
+    if (devices.length > 0) {
+      currentDeviceId = devices[0].deviceId;
+      deviceSelect.value = currentDeviceId;
+    }
   } catch (err) {
-    document.getElementById('status-msg').innerText = "カメラを起動できません";
+    console.error('enumerateDevices error', err);
   }
 }
 
-// 元のコードの切り替えロジックを完全復元
-function switchCamera() {
-  if (!cameras || cameras.length === 0) {
-    showOverlayMessage("カメラが見つかりません", 'error', 1800);
-    return;
+// カメラ開始
+async function startCamera(deviceId){
+  stopCamera();
+  const constraints = {
+    audio: false,
+    video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' }
+  };
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+    // video 要素にセット
+    video.srcObject = currentStream;
+    await video.play();
+    scanning = true;
+    // 検出ループ開始
+    startDetectionLoop();
+  } catch (err) {
+    console.error('getUserMedia error', err);
+    alert('カメラにアクセスできません: ' + (err && err.message || err));
   }
-  cameraIndex = (cameraIndex + 1) % cameras.length;
-  startScanner();
 }
 
-function pressScan() {
-  if (!scanArmed || !lastResult) {
-    const s = document.getElementById('status-msg');
-    s.classList.remove('ready');
-    s.innerText = "対象を合わせてください";
-    playErrorEffect();
-    showOverlayMessage("読み取りが確認できません。", 'error', 2500);
-    return;
+// カメラ停止
+function stopCamera(){
+  scanning = false;
+  if (currentStream) {
+    currentStream.getTracks().forEach(t => t.stop());
+    currentStream = null;
   }
-  handleSuccess(lastResult, lastFormat);
+  // ZXing の場合は Reader 停止
+  if (zxingReader && typeof zxingReader.reset === 'function') {
+    try { zxingReader.reset(); } catch(e){/* ignore */ }
+  }
 }
 
-async function handleSuccess(text, format) {
-  const clean = (text || '').replace(/\*/g, "");
+// カメラ切替（deviceSelect の選択を巡回）
+function switchCamera(){
+  if (devices.length <= 1) return;
+  const idx = devices.findIndex(d => d.deviceId === currentDeviceId);
+  const nextIdx = (idx + 1) % devices.length;
+  currentDeviceId = devices[nextIdx].deviceId;
+  deviceSelect.value = currentDeviceId;
+  startCamera(currentDeviceId);
+}
 
-  if (format === "QR_CODE" && clean.startsWith("MEDIA:")) {
-    const id = clean.split(":")[1] || "";
-    if (id) {
-      playSuccessEffect();
-      setTimeout(() => {
-        try { localStorage.setItem('currentMedia', id); } catch(e){}
-        if (html5QrCode) {
-          html5QrCode.stop().then(()=> { location.href = "index.html"; }).catch(()=> { location.href = "index.html"; });
-        } else {
-          location.href = "index.html";
-        }
-      }, 450);
+// UI イベント紐付け
+function attachUI(){
+  startBtn.addEventListener('click', async () => {
+    if (!currentDeviceId && devices.length>0) currentDeviceId = devices[0].deviceId;
+    await startCamera(currentDeviceId);
+  });
+  stopBtn.addEventListener('click', () => stopCamera());
+  switchBtn.addEventListener('click', () => switchCamera());
+  deviceSelect.addEventListener('change', (e) => {
+    currentDeviceId = e.target.value;
+    startCamera(currentDeviceId);
+  });
+  confirmBtn.addEventListener('click', () => {
+    // 解析確定: 最新の検出結果を確定処理（必要ならここでサーバ送信や別UIに渡す）
+    if (!latestDetection.text) {
+      alert('検出結果がありません。まずはカメラを開始して読み取ってください。');
       return;
     }
-  }
+    // ここを必要に応じて書き換え
+    onConfirmParse(latestDetection);
+  });
+  copyBtn.addEventListener('click', () => {
+    if (latestDetection.text) {
+      navigator.clipboard?.writeText(latestDetection.text).then(()=> {
+        alert('クリップボードにコピーしました');
+      }).catch(()=> {
+        alert('コピーに失敗しました');
+      });
+    } else {
+      alert('コピーするテキストがありません');
+    }
+  });
+}
 
-  const magic = (gameData && gameData.magics) ? gameData.magics.find(m => m.code === clean) : null;
-  if (magic) {
-    playSuccessEffect();
+// 解析確定時の挙動（必要に応じて編集）
+function onConfirmParse(detection){
+  // detection: { text, format, raw }
+  // ここで API に投げる / フォームに入れる 等、実アプリ固有の処理を行ってください
+  // デモではダイアログで表示
+  const msg = `解析確定しました。\n\n内容:\n${detection.text}\n\nフォーマット: ${detection.format || '不明'}`;
+  alert(msg);
+}
+
+// 検出ループ（BarcodeDetector / ZXing を切り替え）
+let detectionLoopController = { cancelled: false };
+
+async function startDetectionLoop(){
+  // 既に検出中なら停止してから再開
+  detectionLoopController.cancelled = true;
+  detectionLoopController = { cancelled: false };
+
+  // 優先: BarcodeDetector
+  if (barcodeDetector) {
+    // Create an offscreen/hidden canvas to capture frames (useful for better control)
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     try {
-      let myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
-      if (!myMagics.includes(magic.id)) {
-        myMagics.push(magic.id);
-        localStorage.setItem('myMagics', JSON.stringify(myMagics));
+      while (!detectionLoopController.cancelled && scanning) {
+        if (video.readyState < 2) { // HAVE_CURRENT_DATA
+          await new Promise(resolve => setTimeout(resolve, 100));
+          continue;
+        }
+        // サイズ同期
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        try{
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageBitmap = await createImageBitmap(canvas);
+          const barcodes = await barcodeDetector.detect(imageBitmap);
+          if (barcodes && barcodes.length) {
+            // 取れたものは複数ありうる。ここでは最初のものを採用し UI 表示
+            const b = barcodes[0];
+            updateLatestDetection(b.rawValue || b.rawValue, b.format || b.format);
+            // 連続して同じものを表示し続けたくない場合はここで多少間隔を置く
+            // await new Promise(resolve => setTimeout(resolve, 200));
+          }
+          imageBitmap.close();
+        }catch(e){
+          // 一部ブラウザでは detect でたまに例外が出る
+          console.warn('detect loop error', e);
+        }
+        // 少し待つ（CPU負荷抑制）
+        await new Promise(resolve => setTimeout(resolve, 150));
       }
-    } catch (e) {}
-    setTimeout(() => {
-      showModal("DATA ACQUIRED", magic.name, magic.desc);
-    }, 450);
-    return;
+    } catch (err) {
+      console.error('BarcodeDetector loop failed, will fallback if possible', err);
+      // フォールバック開始
+      await ensureZXingLoaded();
+      startZXingContinuous();
+    }
+  } else {
+    // BarcodeDetector がない -> ZXing を動的ロードして連続検出
+    await ensureZXingLoaded();
+    startZXingContinuous();
   }
-
-  playErrorEffect();
-  showOverlayMessage("無効なコードです", 'error', 3000);
-  setTimeout(() => {
-    scanArmed = false; lastResult = null;
-    document.getElementById('status-msg').classList.remove('ready');
-    document.getElementById('status-msg').innerText = "コードを探索中...";
-  }, 800);
 }
 
-function cancelModal() {
-  document.getElementById('result-modal').style.display = 'none';
-  document.body.classList.remove('modal-open');
-  playErrorEffect();
-  showOverlayMessage("取得をキャンセルしました", 'error', 2000);
-  scanArmed = false;
-  lastResult = null;
-  document.getElementById('status-msg').classList.remove('ready');
-  document.getElementById('status-msg').innerText = "コードを探索中...";
+// ZXing 読み込み（動的）
+function ensureZXingLoaded(){
+  return new Promise((resolve, reject) => {
+    if (zxingLoaded) return resolve();
+    if (zxingScriptLoaded) {
+      // 他の箇所で読み込み中
+      const check = setInterval(()=> {
+        if (zxingLoaded) { clearInterval(check); resolve(); }
+      }, 100);
+      return;
+    }
+    zxingScriptLoaded = true;
+    const s = document.createElement('script');
+    s.src = zxingModuleUrl;
+    s.onload = () => {
+      zxingLoaded = true;
+      zxingScriptLoaded = false;
+      console.log('ZXing library loaded');
+      resolve();
+    };
+    s.onerror = (e) => {
+      zxingScriptLoaded = false;
+      console.error('Failed to load ZXing library', e);
+      reject(new Error('ZXing ライブラリの読み込みに失敗しました'));
+    };
+    document.head.appendChild(s);
+  });
 }
 
-function confirmAndReturn() {
-  document.getElementById('result-modal').style.display = 'none';
-  document.body.classList.remove('modal-open');
-  setTimeout(()=> { location.href = "index.html"; }, 260);
+// ZXing での連続読み取り開始
+function startZXingContinuous(){
+  try {
+    // @zxing/library の UMD はグローバルに ZXing として公開される想定
+    const ZXing = window.ZXing || window.ZXingBrowser || window.ZXingLibrary || window['@zxing/library'] || window['ZXing'];
+    if (!ZXing && typeof window.BrowserMultiFormatReader === 'undefined' && typeof window.ZXing === 'undefined') {
+      // いくつかの CDN では UMD 名前が異なるため、index.min.js を load した直後は window.ZXing にいるか確認
+      // try common path:
+      // Some builds define BrowserMultiFormatReader on window
+    }
+    // try multiple known symbols
+    const BrowserMultiFormatReader = window.BrowserMultiFormatReader || (ZXing && ZXing.BrowserMultiFormatReader) || (window.ZXing && window.ZXing.BrowserMultiFormatReader);
+    if (!BrowserMultiFormatReader) {
+      console.error('Cannot find BrowserMultiFormatReader in loaded ZXing library', window.ZXing, ZXing, window.BrowserMultiFormatReader);
+      alert('ZXing の初期化に失敗しました。BarcodeDetector 非対応のブラウザでは動作しない可能性があります。');
+      return;
+    }
+
+    // Reader 初期化
+    if (zxingReader && typeof zxingReader.reset === 'function') {
+      try { zxingReader.reset(); } catch (e) {}
+    }
+    zxingReader = new BrowserMultiFormatReader();
+    // decodeFromVideoDevice を使ってコールバックで継続検出
+    zxingReader.listVideoInputDevices()
+      .then(videoInputDevices => {
+        // 既に deviceSelect にある機器リストと同じか確認して必要なら更新
+        if (!devices.length && videoInputDevices && videoInputDevices.length) {
+          devices = videoInputDevices.map(v=>({ deviceId: v.deviceId, label: v.label || 'カメラ' }));
+          deviceSelect.innerHTML = '';
+          devices.forEach((d,i)=>{
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.text = d.label || `カメラ ${i+1}`;
+            deviceSelect.appendChild(opt);
+          });
+          if (devices.length>0) {
+            currentDeviceId = devices[0].deviceId;
+            deviceSelect.value = currentDeviceId;
+          }
+        }
+        // 実際に decodeFromVideoDevice を開始
+        const targetDeviceId = currentDeviceId || (devices[0] && devices[0].deviceId) || undefined;
+        zxingReader.decodeFromVideoDevice(targetDeviceId, video, (result, err) => {
+          if (result) {
+            // result は ZXing の Result オブジェクト
+            updateLatestDetection(result.getText(), result.getBarcodeFormat && result.getBarcodeFormat());
+          }
+          if (err && !(err instanceof ZXing.NotFoundException)) {
+            // 単純に NotFound は無視（検出なし）
+            // console.error(err);
+          }
+        });
+      })
+      .catch(err => {
+        console.error('ZXing listVideoInputDevices error', err);
+      });
+  } catch (e) {
+    console.error('startZXingContinuous error', e);
+  }
 }
 
-function showModal(title, name, desc) {
-  document.getElementById('modal-title').innerText = title;
-  document.getElementById('modal-name').innerText = name;
-  document.getElementById('modal-desc').innerText = desc;
-  document.getElementById('result-modal').style.display = 'flex';
-  document.body.classList.add('modal-open');
+// 最新検出更新（UI）
+function updateLatestDetection(text, format){
+  // 同一内容が高速連続で来ると鬱陶しいため、差分があるときだけ更新（ただし常に最新を上書きする方が良ければコメントアウト）
+  if (!text) return;
+  if (latestDetection.text === text && latestDetection.format === format) return;
+  latestDetection = { text: String(text), format: String(format || 'unknown'), raw: null, time: Date.now() };
+  detectedEl.textContent = latestDetection.text;
+  formatInfoEl.textContent = 'フォーマット: ' + (latestDetection.format || '不明');
+  // 任意: ここでサウンドや振動を出すなどのフィードバックが可能
 }
 
-window.onload = loadData;
+// ページアンロード時にカメラ停止
+window.addEventListener('pagehide', stopCamera);
+window.addEventListener('beforeunload', stopCamera);
+
+// 初期化実行
+init();
+
+// 便利: ページ読み込み直後に自動開始したい場合は startBtn.click() を呼ぶ
 </script>
 </body>
 </html>
