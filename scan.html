@@ -117,17 +117,15 @@ body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
 #status-msg{ font-size:.85rem; color:#9aa3b2; letter-spacing:.08em; transition: color .18s ease, text-shadow .18s ease; min-height:1.1em; text-align:center; }
 #status-msg.ready{ color: var(--ready-green); text-shadow: var(--glow-green); }
 
-/* control group layout */
+/* button layout */
 .scan-control-group {
   display: flex;
   width: 100%;
   max-width: 520px;
   gap: 12px;
 }
-
-#scan-trigger{ flex: 1; height:56px; border-radius:14px; border:none; background: linear-gradient(135deg,var(--accent-red),#ff6a88); color:#fff; font-weight:800; font-size:1.05rem; box-shadow:var(--glow-red); -webkit-tap-highlight-color:transparent; cursor:pointer; }
-
-.switch-btn{ width:56px; height:56px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background: linear-gradient(180deg,#1c1c2e,#0a0a12); color:#fff; font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+#scan-trigger{ flex: 1; height:56px; border-radius:14px; border:none; background: linear-gradient(135deg,var(--accent-red),#ff6a88); color:#fff; font-weight:800; font-size:1.05rem; box-shadow:var(--glow-red); cursor:pointer; }
+.switch-btn{ width:56px; height:56px; border-radius:14px; border:1px solid rgba(255,255,255,0.1); background: linear-gradient(180deg,#1c1c2e,#0a0a12); color:#fff; font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 
 /* cancel */
 .back-link{ color:#9aa3b2; text-decoration:none; font-size:.86rem; opacity:.95 }
@@ -165,7 +163,7 @@ body.modal-open .hud-corner { opacity:0; transform:scale(.98); }
 
   <div class="scan-control-group">
     <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-    <button class="switch-btn" onclick="switchCamera()" title="カメラ切り替え">🔄</button>
+    <button class="switch-btn" onclick="switchCamera()">🔄</button>
   </div>
 
   <a href="index.html" class="back-link">CANCEL</a>
@@ -234,17 +232,16 @@ async function loadData() {
     const res = await fetch('magics.json');
     gameData = await res.json();
   } catch (e) {
-    console.error('magics.json load error', e);
     gameData = { magics: [], media_data: {} };
   }
 
   try {
     cameras = await Html5Qrcode.getCameras();
   } catch (e) {
-    console.warn('getCameras failed', e);
     cameras = [];
   }
 
+  // 元のコードと同じ初期カメラ選択ロジック
   const back = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
   cameraIndex = back >= 0 ? back : 0;
 
@@ -267,7 +264,7 @@ async function startScanner() {
 
   html5QrCode = new Html5Qrcode("reader");
 
-  // バーコード・QRコード全対応
+  // QRとバーコードを同時に受け付ける設定
   const formats = [
     Html5QrcodeSupportedFormats.QR_CODE,
     Html5QrcodeSupportedFormats.EAN_13,
@@ -279,19 +276,17 @@ async function startScanner() {
   ];
 
   try {
-    const config = { 
-      fps: 15, 
-      formatsToSupport: formats,
-      // ピント調整: デバイスが対応していれば連続オートフォーカスを有効化
-      videoConstraints: {
-        focusMode: "continuous",
-        advanced: [{ focusMode: "continuous" }]
-      }
-    };
-
+    // 元のコードのカメラ指定方式を復元しつつ、ピント調整を付与
     await html5QrCode.start(
       (cameras && cameras[cameraIndex]) ? cameras[cameraIndex].id : { facingMode: "environment" },
-      config,
+      { 
+        fps: 15, 
+        formatsToSupport: formats,
+        // ピント調整用の設定
+        videoConstraints: {
+          advanced: [{ focusMode: "continuous" }]
+        }
+      },
       (text, result) => {
         lastResult = text;
         lastFormat = result.result.format.formatName;
@@ -306,14 +301,14 @@ async function startScanner() {
       (err) => {}
     );
   } catch (err) {
-    console.error('start failed', err);
     document.getElementById('status-msg').innerText = "カメラを起動できません";
   }
 }
 
+// 元のコードの切り替えロジックを完全復元
 function switchCamera() {
-  if (!cameras || cameras.length <= 1) {
-    showOverlayMessage("切り替え可能なカメラがありません", 'error', 1800);
+  if (!cameras || cameras.length === 0) {
+    showOverlayMessage("カメラが見つかりません", 'error', 1800);
     return;
   }
   cameraIndex = (cameraIndex + 1) % cameras.length;
@@ -326,7 +321,7 @@ function pressScan() {
     s.classList.remove('ready');
     s.innerText = "対象を合わせてください";
     playErrorEffect();
-    showOverlayMessage("読み取りが確認できません。画面内に対象を合わせてください。", 'error', 2500);
+    showOverlayMessage("読み取りが確認できません。", 'error', 2500);
     return;
   }
   handleSuccess(lastResult, lastFormat);
@@ -335,7 +330,6 @@ function pressScan() {
 async function handleSuccess(text, format) {
   const clean = (text || '').replace(/\*/g, "");
 
-  // 媒体接続
   if (format === "QR_CODE" && clean.startsWith("MEDIA:")) {
     const id = clean.split(":")[1] || "";
     if (id) {
@@ -352,7 +346,6 @@ async function handleSuccess(text, format) {
     }
   }
 
-  // 魔法習得
   const magic = (gameData && gameData.magics) ? gameData.magics.find(m => m.code === clean) : null;
   if (magic) {
     playSuccessEffect();
@@ -370,12 +363,11 @@ async function handleSuccess(text, format) {
   }
 
   playErrorEffect();
-  showOverlayMessage("有効なデータが見つかりませんでした", 'error', 3000);
+  showOverlayMessage("無効なコードです", 'error', 3000);
   setTimeout(() => {
     scanArmed = false; lastResult = null;
-    const st = document.getElementById('status-msg');
-    st.classList.remove('ready');
-    st.innerText = "コードを探索中...";
+    document.getElementById('status-msg').classList.remove('ready');
+    document.getElementById('status-msg').innerText = "コードを探索中...";
   }, 800);
 }
 
@@ -386,9 +378,8 @@ function cancelModal() {
   showOverlayMessage("取得をキャンセルしました", 'error', 2000);
   scanArmed = false;
   lastResult = null;
-  const st = document.getElementById('status-msg');
-  st.classList.remove('ready');
-  st.innerText = "コードを探索中...";
+  document.getElementById('status-msg').classList.remove('ready');
+  document.getElementById('status-msg').innerText = "コードを探索中...";
 }
 
 function confirmAndReturn() {
