@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>魔法スキャナー（改良版）</title>
+<title>魔法スキャナー</title>
 
-<!-- ここはローカルに置いた html5-qrcode を読み込み -->
 <script src="html5-qrcode.min.js"></script>
 
 <style>
@@ -15,197 +14,160 @@
   --panel-dark:#0f1120;
   --glow-red:0 0 18px rgba(255,45,85,0.5);
   --glow-green:0 0 18px rgba(0,255,204,0.45);
-  --controls-h:150px; /* コントロール領域の高さ（調整） */
+  /* 下部UIの高さを少し広めに確保 */
+  --controls-h: 210px;
 }
 
 /* リセット */
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
+html,body{height:100%; width:100%; overflow:hidden;}
 body{
-  background:#000;color:#e6e9ff;
+  background:#000; color:#e6e9ff;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  display:flex;flex-direction:column;overflow:hidden;
+  display:flex; flex-direction:column;
   -webkit-font-smoothing:antialiased;
 }
 
-/* カメラ表示領域 */
+/* カメラ表示領域：画面上部を広く使う */
 #reader-wrapper{
   position:relative;
   width:100%;
-  height: calc(100dvh - var(--controls-h));
-  max-height: calc(100dvh - var(--controls-h));
+  flex: 1; /* 残りのスペースをすべて使う */
   background:#000;
-  display:flex;align-items:center;justify-content:center;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
 }
-#reader{ width:100%!important; height:100%!important; max-width:900px; }
-#reader video{ width:100%!important; height:100%!important; object-fit:cover!important; display:block; }
+/* html5-qrcode内部のビデオ表示 */
+#reader{ width:100%!important; height:100%!important; }
+#reader video{ width:100%!important; height:100%!important; object-fit:cover!important; }
 
-/* フラッシュレイヤ */
+/* 成功・エラー時のフラッシュ（一瞬光る演出のみ残す） */
 #success-flash, #error-flash{
   position:absolute; inset:0; pointer-events:none; z-index:160; opacity:0;
   transition:opacity .18s ease;
 }
-#success-flash{ background: rgba(0,255,204,0.12); }
+#success-flash{ background: rgba(0,255,204,0.15); }
 #success-flash.show{ opacity:1; }
-#error-flash{ background: rgba(255,45,85,0.10); }
+#error-flash{ background: rgba(255,45,85,0.12); }
 #error-flash.show{ opacity:1; }
 
-/* HUDコーナー（飾り） */
-.hud-corner{ position:absolute; width:30px; height:30px; border:2px solid var(--accent-red); z-index:140; }
-.top-left{ top:12px; left:12px; border-right:none; border-bottom:none; }
-.top-right{ top:12px; right:12px; border-left:none; border-bottom:none; }
-.bottom-left{ bottom:12px; left:12px; border-right:none; border-top:none; }
-.bottom-right{ bottom:12px; right:12px; border-left:none; border-top:none; }
-
-/* オーバーレイメッセージ */
+/* メッセージ表示 */
 #overlay-msg{
-  position:absolute; top:10%; left:50%; transform:translateX(-50%);
-  background:rgba(6,10,20,0.9); padding:10px 14px; border-radius:12px;
-  border:1px solid rgba(255,45,85,0.12); z-index:170; opacity:0; pointer-events:none; transition:opacity .18s;
+  position:absolute; top:15%; left:50%; transform:translateX(-50%);
+  background:rgba(6,10,20,0.9); padding:10px 18px; border-radius:12px;
+  border:1px solid rgba(255,45,85,0.2); z-index:170; opacity:0; pointer-events:none; transition:opacity .2s;
+  white-space: nowrap;
 }
-#overlay-msg.show{ opacity:1; pointer-events:none; }
+#overlay-msg.show{ opacity:1; }
 
-/* コントロール領域（下） — iPhone基準で余白確保 */
+/* コントロール領域：下部に固定 */
 .controls{
   width:100%;
   background:var(--panel-dark);
-  border-top:1px solid rgba(255,45,85,0.06);
-  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
-  display:flex; flex-direction:column; align-items:center; gap:10px;
-  box-shadow: 0 -8px 20px rgba(0,0,0,0.5);
-  position:relative;
+  border-top:1px solid rgba(255,255,255,0.1);
+  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; align-items:center; gap:16px;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+  z-index:200;
 }
-#top-actions{
-  width:100%;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-/* cancel を左上っぽく見せつつ押しやすく */
-.back-link{
-  color:#9aa3b2; text-decoration:none; font-size:.92rem; padding:6px 10px; border-radius:8px;
-  background:transparent;
-}
-#status-msg{ font-size:.9rem; color:#9aa3b2; text-align:center; min-height:1.1em; }
+
+/* ステータスメッセージ */
+#status-msg{ font-size:.9rem; color:#9aa3b2; text-align:center; min-height:1.2em; font-weight: 500;}
 #status-msg.ready{ color:var(--ready-green); text-shadow:var(--glow-green); }
 
-/* メインボタン */
+/* メインボタン（解析を確定する）を最上部に */
 #scan-trigger{
-  width:100%; max-width:520px; height:56px; border-radius:14px; border:none;
-  background: linear-gradient(135deg,var(--accent-red),#ff6a88);
-  color:#fff; font-weight:800; font-size:1.05rem; box-shadow:var(--glow-red);
+  width:100%; max-width:400px; height:60px; border-radius:16px; border:none;
+  background: linear-gradient(135deg, var(--accent-red), #ff6a88);
+  color:#fff; font-weight:800; font-size:1.1rem; box-shadow:var(--glow-red);
   -webkit-tap-highlight-color:transparent;
+  transition: transform 0.1s active;
+}
+#scan-trigger:active { transform: scale(0.97); }
+
+/* サブボタン群（カメラ切替と戻る） */
+.action-group{
+  width:100%; max-width:400px;
+  display:flex; gap:12px; justify-content: space-between;
+}
+.sub-btn{
+  flex: 1; height:48px; border-radius:12px; border:1px solid rgba(255,255,255,0.15);
+  background:rgba(255,255,255,0.05); color:#fff; font-weight:600; font-size:.95rem;
+  display:flex; align-items:center; justify-content:center; text-decoration:none;
 }
 
-/* 小さめボタン群 */
-.btn-group{ display:flex; gap:10px; align-items:center; }
-.mode-btn{ min-width:48px; height:44px; border-radius:999px; border:1px solid rgba(255,255,255,0.04); background:#0c0c12; color:#fff; font-weight:700; cursor:pointer; }
-
 /* モーダル */
-#result-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:999; justify-content:center; align-items:center; padding:22px; }
-.modal-card{ width:100%; max-width:520px; background: linear-gradient(180deg,#0f1030,#0b0b18); border-radius:18px; padding:18px; text-align:center; color:#e9ecff; }
-.modal-name{ font-size:1.6rem; color:var(--accent-red); font-weight:900; margin:8px 0; }
-.modal-desc{ color:#cfe7ff; margin-bottom:14px; }
+#result-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; justify-content:center; align-items:center; padding:20px; }
+.modal-card{ width:100%; max-width:450px; background:#16182a; border-radius:24px; padding:24px; text-align:center; border:1px solid rgba(255,45,85,0.3); }
+.modal-name{ font-size:1.6rem; color:var(--accent-red); font-weight:900; margin:10px 0; }
+.modal-cta{ width:100%; height:50px; border-radius:12px; border:none; background:var(--accent-red); color:#fff; font-weight:700; margin-top:15px;}
 
-/* レスポンシブ微調整（小さい画面でCancelが隠れないように） */
-@media (max-height:700px){
-  :root{ --controls-h:170px; }
-  #reader-wrapper{ height: calc(100dvh - var(--controls-h)); }
-  .controls{ padding:10px 12px calc(8px + env(safe-area-inset-bottom)); }
+/* 小さな画面への対応 */
+@media (max-height: 650px) {
+  #scan-trigger { height: 50px; }
+  .controls { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); gap: 10px; }
 }
 </style>
 </head>
 <body>
 
-<!-- camera area -->
 <div id="reader-wrapper">
   <div id="success-flash" aria-hidden="true"></div>
   <div id="error-flash" aria-hidden="true"></div>
-
-  <div class="hud-corner top-left"></div>
-  <div class="hud-corner top-right"></div>
-  <div class="hud-corner bottom-left"></div>
-  <div class="hud-corner bottom-right"></div>
-
+  
   <div id="reader"></div>
-
-  <div id="overlay-msg" role="status" aria-live="polite"></div>
+  <div id="overlay-msg" role="status"></div>
 </div>
 
-<!-- controls -->
-<div class="controls" role="region" aria-label="controls">
-  <div id="top-actions">
-    <a href="index.html" class="back-link">CANCEL</a>
-    <div class="btn-group">
-      <button class="mode-btn" id="camera-switch" onclick="switchCamera()">🔄</button>
-    </div>
-  </div>
-
-  <div id="status-msg">コードを探索中...</div>
+<div class="controls">
+  <div id="status-msg">スキャン準備中...</div>
 
   <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
+
+  <div class="action-group">
+    <button class="sub-btn" onclick="switchCamera()">🔄 カメラ切替</button>
+    <a href="index.html" class="sub-btn">元の画面に戻る</a>
+  </div>
 </div>
 
-<!-- modal -->
-<div id="result-modal" aria-hidden="true">
-  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div id="modal-title" class="modal-title">DATA ACQUIRED</div>
+<div id="result-modal">
+  <div class="modal-card">
+    <div id="modal-title" style="font-size:0.8rem; color:#9aa3b2;">DATA ACQUIRED</div>
     <div id="modal-name" class="modal-name"></div>
-    <div id="modal-desc" class="modal-desc"></div>
-    <button class="modal-cta" id="modal-ok" onclick="confirmAndReturn()">閉じるして元に戻る</button>
-    <div style="margin-top:8px;"><a href="#" class="modal-cancel" onclick="cancelModal();return false;">キャンセル</a></div>
+    <div id="modal-desc" style="color:#cfe7ff; margin-bottom:15px;"></div>
+    <button class="modal-cta" onclick="confirmAndReturn()">閉じて元に戻る</button>
+    <div style="margin-top:12px;"><a href="#" style="color:#9aa3b2; font-size:0.9rem;" onclick="cancelModal();return false;">キャンセル</a></div>
   </div>
 </div>
 
 <script>
-/* ======================================================
-   グローバル（インデックス整理）
-   1. 変数
-   2. 初期化 / 読み込み
-   3. スキャナー開始 / 停止
-   4. オートフォーカス関連
-   5. スキャン成功処理
-   6. UI / モーダル
-   ====================================================== */
-
-/* 1. 変数 */
 let html5QrCode = null;
 let cameras = [];
 let cameraIndex = 0;
 let lastResult = null;
 let scanArmed = false;
 let gameData = null;
-
-/* フォーカス再トリガーID（外部でキャンセルできるように保持） */
 let focusIntervalId = null;
 
-/* 2. 初期化 */
 window.onload = loadData;
+
 async function loadData(){
   try{
     const res = await fetch('magics.json');
     gameData = await res.json();
-  }catch(e){
-    console.warn('magics.json load failed', e);
-    gameData = { magics: [], media_data: {} };
-  }
+  }catch(e){ gameData = { magics: [], media_data: {} }; }
 
   try{
     cameras = await Html5Qrcode.getCameras();
+    const foundBack = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
+    cameraIndex = foundBack >= 0 ? foundBack : 0;
+    await startScanner();
   }catch(e){
-    console.warn('getCameras failed', e);
-    cameras = [];
+    setStatus("カメラが見つかりません", false);
   }
-
-  const foundBack = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
-  cameraIndex = foundBack >= 0 ? foundBack : 0;
-
-  await startScanner();
 }
 
-/* 3. スキャナー開始 / 停止 */
 async function startScanner(){
-  // stop existing scanner & clear focus loop
   if(html5QrCode){
     try{ await html5QrCode.stop(); }catch(e){}
     html5QrCode = null;
@@ -217,112 +179,53 @@ async function startScanner(){
 
   html5QrCode = new Html5Qrcode("reader");
 
-  const formats = [
-    Html5QrcodeSupportedFormats.QR_CODE,
-    Html5QrcodeSupportedFormats.EAN_13,
-    Html5QrcodeSupportedFormats.EAN_8,
-    Html5QrcodeSupportedFormats.CODE_128,
-    Html5QrcodeSupportedFormats.CODE_39,
-    Html5QrcodeSupportedFormats.UPC_A,
-    Html5QrcodeSupportedFormats.UPC_E
-  ];
-
-  // start with cameraId when available, fallback to facingMode
-  const cameraIdOrFacingMode = (cameras && cameras[cameraIndex]) ? cameras[cameraIndex].id : { facingMode: "environment" };
-
   const config = {
-    fps: 15,
-    // QR解析を速くするため表示領域の一部だけ解析（速度改善）
-    qrbox: (viewfinderWidth, viewfinderHeight) => {
-      const s = Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.62);
-      return { width: s, height: s };
-    },
-    formatsToSupport: formats,
-    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+    fps: 25,
+    // qrboxを削除することで、枠を表示せず全画面スキャンにする
+    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+    videoConstraints: {
+      facingMode: "environment",
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
   };
 
   try{
-    await html5QrCode.start(cameraIdOrFacingMode, config,
-      (decodedText, decodedResult) => { // success callback per frame
-        // arm scan only when something stable found; we set lastResult every frame and mark scanArmed quickly
-        lastResult = decodedText;
-        if(!scanArmed){
-          scanArmed = true;
-          setStatus("解析確定可能", true);
-        }
-      },
-      (errorMessage) => {
-        // per-frame errors ignored
+    const source = (cameras && cameras[cameraIndex]) ? { deviceId: { exact: cameras[cameraIndex].id } } : { facingMode: "environment" };
+    
+    await html5QrCode.start(source, config, (decodedText) => {
+      lastResult = decodedText;
+      if(!scanArmed){
+        scanArmed = true;
+        setStatus("解析確定可能", true);
       }
-    );
+    });
 
-    // try to improve focus/quality after stream starts
-    enableAutoFocusAndQuality();
-
+    enableAutoFocus();
   }catch(err){
-    console.error("Scanner start failed", err);
-    setStatus("カメラを起動できません", false);
+    setStatus("カメラ起動エラー", false);
   }
 }
 
-/* stop scanner - useful for cleanup (not used visibly here but kept) */
-async function stopScanner(){
-  if(html5QrCode){
-    try{ await html5QrCode.stop(); }catch(e){}
-    html5QrCode = null;
-  }
-  if(focusIntervalId){ clearInterval(focusIntervalId); focusIntervalId = null; }
+function enableAutoFocus(){
+  const apply = async () => {
+    try {
+      const track = html5QrCode.getRunningTrack();
+      if (!track) return;
+      const caps = track.getCapabilities();
+      const constraints = {};
+      if (caps.focusMode && caps.focusMode.includes('continuous')) constraints.focusMode = 'continuous';
+      if (Object.keys(constraints).length > 0) await track.applyConstraints({ advanced: [constraints] });
+    } catch (e) {}
+  };
+  apply();
+  focusIntervalId = setInterval(apply, 3000);
 }
 
-/* 4. オートフォーカス / 画質改善（端末依存） */
-async function enableAutoFocusAndQuality(){
-  if(!html5QrCode) return;
-  try{
-    const track = html5QrCode.getRunningTrack();
-    if(!track) return;
-
-    // try to set preferred resolution (ideally improve detail)
-    try{
-      await track.applyConstraints({
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        // advanced focus/exposure hints where supported
-        advanced: [
-          { focusMode: "continuous" },
-          { exposureMode: "continuous" },
-          // some devices accept focusDistance/zoom; we include hints but they may be ignored
-          { zoom: 1.0 }
-        ]
-      });
-    }catch(e){
-      // ignore if not supported
-    }
-
-    // Re-apply continuous focus periodically to handle devices that lose AF
-    focusIntervalId = setInterval(async () => {
-      try{
-        const t = html5QrCode.getRunningTrack();
-        if(!t) return;
-        await t.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-      }catch(e){}
-    }, 2500);
-
-    // Attempt to enable torch if available and if user wants (not enabled here by default)
-    // Note: turning on torch without user action may be blocked by browsers;
-    // we keep code commented for reference:
-    // try{ await track.applyConstraints({ advanced: [{ torch: true }] }); }catch(e){}
-
-  }catch(e){
-    console.warn("autofocus/quality not supported:", e);
-  }
-}
-
-/* 5. スキャン確定（ユーザー押下） / 成功処理 */
 function pressScan(){
   if(!scanArmed || !lastResult){
-    setStatus("対象を合わせてください", false);
+    showOverlay("対象を中央に合わせてください");
     playErrorEffect();
-    showOverlay("読み取りが確認できません。画面内に対象を合わせてください。", 'error', 2200);
     return;
   }
   handleSuccess(lastResult);
@@ -330,100 +233,72 @@ function pressScan(){
 
 async function handleSuccess(rawText){
   const text = (rawText||"").replace(/\*/g,"");
-
-  // MEDIA: の処理（QRでの遷移）
   if(text.startsWith("MEDIA:")){
-    const id = text.split(":")[1] || "";
     playSuccessEffect();
     setTimeout(async () => {
-      try{ localStorage.setItem('currentMedia', id); }catch(e){}
-      // stop scanner to release camera before navigation
-      try{ if(html5QrCode) await html5QrCode.stop(); }catch(e){}
+      localStorage.setItem('currentMedia', text.split(":")[1] || "");
+      if(html5QrCode) await html5QrCode.stop();
       location.href = "index.html";
-    }, 420);
+    }, 400);
     return;
   }
 
-  // バーコード → magics lookup
-  const magic = (gameData && gameData.magics) ? gameData.magics.find(m => m.code === text) : null;
+  const magic = (gameData?.magics) ? gameData.magics.find(m => m.code === text) : null;
   if(magic){
-    // persist and show modal
-    try{
-      let myMagics = JSON.parse(localStorage.getItem('myMagics') || "[]");
-      if(!myMagics.includes(magic.id)){ myMagics.push(magic.id); localStorage.setItem('myMagics', JSON.stringify(myMagics)); }
-    }catch(e){}
     playSuccessEffect();
-    setTimeout(()=> showModal("DATA ACQUIRED", magic.name, magic.desc), 380);
-    return;
+    let my = JSON.parse(localStorage.getItem('myMagics') || "[]");
+    if(!my.includes(magic.id)){ my.push(magic.id); localStorage.setItem('myMagics', JSON.stringify(my)); }
+    setTimeout(()=> showModal(magic.name, magic.desc), 300);
+  } else {
+    playErrorEffect();
+    showOverlay("未登録のコードです");
+    setTimeout(()=> { scanArmed=false; lastResult=null; setStatus("コードを探索中...", false); }, 1000);
   }
-
-  // not found
-  playErrorEffect();
-  showOverlay("魔法コードが見つかりませんでした", 'error', 2600);
-  // reset and restart scanning after a moment
-  setTimeout(()=>{ scanArmed=false; lastResult=null; setStatus("コードを探索中...", false); startScanner(); }, 900);
 }
 
-/* 6. UI / モーダル / ユーティリティ */
 function setStatus(text, ready){
   const st = document.getElementById('status-msg');
   st.innerText = text;
   st.classList.toggle('ready', !!ready);
 }
 
-function showOverlay(msg, type='info', duration=1800){
+function showOverlay(msg){
   const el = document.getElementById('overlay-msg');
   el.innerText = msg;
   el.classList.add('show');
-  setTimeout(()=> el.classList.remove('show'), duration);
+  setTimeout(()=> el.classList.remove('show'), 2000);
 }
 
 function playSuccessEffect(){
-  const el = document.getElementById('success-flash');
-  el.classList.add('show');
-  if(navigator.vibrate) try{ navigator.vibrate(60); }catch(e){}
-  setTimeout(()=> el.classList.remove('show'), 320);
+  document.getElementById('success-flash').classList.add('show');
+  if(navigator.vibrate) navigator.vibrate(60);
+  setTimeout(()=> document.getElementById('success-flash').classList.remove('show'), 300);
 }
 function playErrorEffect(){
-  const el = document.getElementById('error-flash');
-  el.classList.add('show');
-  if(navigator.vibrate) try{ navigator.vibrate([30,20,30]); }catch(e){}
-  setTimeout(()=> el.classList.remove('show'), 420);
+  document.getElementById('error-flash').classList.add('show');
+  if(navigator.vibrate) navigator.vibrate([40,40]);
+  setTimeout(()=> document.getElementById('error-flash').classList.remove('show'), 300);
 }
 
-/* モーダル */
-function showModal(title, name, desc){
-  document.getElementById('modal-title').innerText = title || "DATA ACQUIRED";
-  document.getElementById('modal-name').innerText = name || "";
-  document.getElementById('modal-desc').innerText = desc || "";
+function showModal(name, desc){
+  document.getElementById('modal-name').innerText = name;
+  document.getElementById('modal-desc').innerText = desc;
   document.getElementById('result-modal').style.display = 'flex';
-  document.body.classList.add('modal-open');
 }
 function cancelModal(){
   document.getElementById('result-modal').style.display = 'none';
-  document.body.classList.remove('modal-open');
-  // restart scanning
-  scanArmed=false; lastResult=null;
-  startScanner();
+  scanArmed=false; lastResult=null; setStatus("コードを探索中...", false);
 }
 function confirmAndReturn(){
-  // stop then navigate
-  if(html5QrCode){ html5QrCode.stop().catch(()=>{}); }
-  setTimeout(()=> location.href = "index.html", 180);
+  if(html5QrCode) html5QrCode.stop().catch(()=>{});
+  location.href = "index.html";
 }
 
-/* カメラ切替 */
 function switchCamera(){
-  if(!cameras || cameras.length <= 1){ showOverlay("カメラが複数見つかりません", 'error', 1500); return; }
+  if(cameras.length <= 1) return;
   cameraIndex = (cameraIndex + 1) % cameras.length;
   startScanner();
 }
-
-/* 終了時クリーンアップ */
-window.onpagehide = window.onbeforeunload = async () => {
-  if(html5QrCode) try{ await html5QrCode.stop(); }catch(e){}
-  if(focusIntervalId) clearInterval(focusIntervalId);
-};
 </script>
 </body>
 </html>
