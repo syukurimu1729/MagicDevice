@@ -21,6 +21,7 @@
             font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 15px;
             transition: background 0.8s; overflow-x: hidden; box-sizing: border-box;
             animation: fadeIn 0.8s ease-out;
+            padding-bottom: 80px; /* スキャンボタン用の余白 */
         }
 
         body::before {
@@ -45,7 +46,6 @@
             color: #fff; font-size: 0.6rem; padding: 4px 8px; border-radius: 4px;
             cursor: pointer; transition: 0.3s; letter-spacing: 1px;
         }
-        .btn-undo:active { transform: scale(0.9); }
         .btn-undo.disabled { opacity: 0; pointer-events: none; }
 
         .img-container {
@@ -57,10 +57,7 @@
         }
 
         #display-img { 
-            display: block;
-            max-width: 100%;
-            height: auto;
-            object-fit: contain;
+            display: block; max-width: 100%; height: auto; object-fit: contain;
             cursor: zoom-in; transition: transform 0.3s;
         }
         .img-anim { animation: imgUpdate 0.5s ease-out; }
@@ -75,7 +72,6 @@
             box-shadow: inset 0 0 10px rgba(255, 45, 85, 0.1);
             font-family: inherit;
         }
-        
         .select-wrapper::after { 
             content: "▼"; position: absolute; right: 15px; top: 50%; transform: translateY(-50%); 
             color: var(--accent-red); font-size: 0.8rem; pointer-events: none; 
@@ -91,6 +87,7 @@
         .btn-cast:active { transform: scale(0.95); filter: brightness(1.2); }
         .btn-cast:disabled { background: #333; box-shadow: none; cursor: not-allowed; opacity: 0.5; }
 
+        /* 空間転送ボタン（現在のタブで開く） */
         .btn-url {
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
@@ -100,10 +97,30 @@
             font-size: 0.85rem; font-weight: bold; border-radius: 12px; color: white;
             transition: 0.2s;
         }
-        .btn-url:active { transform: scale(0.95); }
 
-        .btn-scan { text-decoration: none; display: inline-block; margin: 20px 0; color: var(--accent-red); font-size: 0.9rem; border-bottom: 1px solid var(--accent-red); }
-        
+        /* スキャンボタンをしっかりしたボタンデザインに */
+        .scan-nav {
+            position: fixed; bottom: 20px; left: 0; width: 100%;
+            display: flex; justify-content: center; z-index: 100;
+        }
+        .btn-scan-main {
+            text-decoration: none; 
+            background: rgba(15, 17, 32, 0.9);
+            color: var(--accent-red);
+            border: 2px solid var(--accent-red);
+            padding: 12px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            box-shadow: var(--glow-red);
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-scan-main:active { transform: scale(0.9); background: var(--accent-red); color: white; }
+        .btn-scan-main::before { content: "📷"; font-size: 1.1rem; }
+
         #result-text { margin-top: 15px; font-size: 0.9rem; color: #cbd5e0; min-height: 1.5em; }
         .hidden { display: none !important; }
 
@@ -123,7 +140,7 @@
         <p id="result-text">周囲をスキャンして解析対象を捉えてください</p>
         
         <div id="url-action" class="hidden">
-            <a id="jump-link" href="#" target="_blank" class="btn-url">空間転送を開始する</a>
+            <a id="jump-link" href="#" class="btn-url">空間転送を開始する</a>
         </div>
     </div>
 
@@ -139,7 +156,9 @@
         </div>
     </div>
 
-    <a href="scan.html" class="btn-scan">スキャンモードを起動</a>
+    <div class="scan-nav">
+        <a href="scan.html" class="btn-scan-main">SCAN MODE</a>
+    </div>
 
     <div id="image-overlay" onclick="closeModal()">
         <img id="overlay-img" src="">
@@ -170,21 +189,21 @@
             const urlAction = document.getElementById('url-action');
             const jumpLink = document.getElementById('jump-link');
 
-            // 1. 魔法プルダウンの更新 (反転魔法を統合)
-            const currentSelection = select.value; // 現在の選択を維持するための保持
+            // 1. 魔法プルダウンの更新（反転を統合）
+            const currentSelection = select.value;
             select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
             let hasMagic = false;
             const canReverse = myMagics.includes('Reverse');
 
             gameData.magics.forEach(m => {
-                // 通常の魔法を追加
                 if (myMagics.includes(m.id) && m.id !== 'Reverse') {
+                    // 通常
                     const opt = document.createElement('option');
                     opt.value = m.id;
                     opt.innerText = m.name;
                     select.appendChild(opt);
                     
-                    // 反転魔法を習得している場合、その魔法の反転版を追加
+                    // 反転版の選択肢を追加
                     if (canReverse) {
                         const revOpt = document.createElement('option');
                         revOpt.value = m.id + "_rev";
@@ -224,7 +243,6 @@
             } else {
                 mediaTitle.innerText = "SIGNAL LOST";
                 imgArea.classList.add('hidden');
-                displayImg.src = ""; 
             }
 
             if (history.length > 0) undoBtn.classList.remove('disabled');
@@ -233,7 +251,7 @@
 
         function castMagic() {
             const mediaId = localStorage.getItem('currentMedia');
-            const targetKey = document.getElementById('magic-select').value; // "_rev" 付きのIDが直接入る
+            const targetKey = document.getElementById('magic-select').value;
             const resultText = document.getElementById('result-text');
             const displayImg = document.getElementById('display-img');
             const urlAction = document.getElementById('url-action');

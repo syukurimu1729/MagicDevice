@@ -4,9 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <title>魔法スキャナー</title>
-
 <script src="https://unpkg.com/html5-qrcode"></script>
-
 <style>
 :root{
   --accent-red:#ff2d55;
@@ -15,112 +13,59 @@
   --glow-red:0 0 18px rgba(255,45,85,0.5);
   --glow-green:0 0 18px rgba(0,255,204,0.45);
 }
-
-/* リセット */
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%; width:100%; overflow:hidden;}
 body{
   background:#000; color:#e6e9ff;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
   display:flex; flex-direction:column;
-  -webkit-font-smoothing:antialiased;
 }
-
-/* カメラ表示領域 */
-#reader-wrapper{
-  position:relative;
-  width:100%;
-  flex: 1;
-  background:#000;
-  display:flex; align-items:center; justify-content:center;
-  overflow:hidden;
-}
+#reader-wrapper{ position:relative; width:100%; flex: 1; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 #reader{ width:100%!important; height:100%!important; }
 #reader video{ width:100%!important; height:100%!important; object-fit:cover!important; }
 
-/* 演出レイヤー */
-#success-flash, #error-flash{
-  position:absolute; inset:0; pointer-events:none; z-index:160; opacity:0;
-  transition:opacity .18s ease;
-}
+#success-flash, #error-flash{ position:absolute; inset:0; pointer-events:none; z-index:160; opacity:0; transition:opacity .18s ease; }
 #success-flash{ background: rgba(0,255,204,0.15); }
 #success-flash.show{ opacity:1; }
 #error-flash{ background: rgba(255,45,85,0.12); }
 #error-flash.show{ opacity:1; }
 
-#overlay-msg{
-  position:absolute; top:15%; left:50%; transform:translateX(-50%);
-  background:rgba(6,10,20,0.9); padding:10px 18px; border-radius:12px;
-  border:1px solid rgba(255,45,85,0.2); z-index:170; opacity:0; pointer-events:none; transition:opacity .2s;
-  white-space: nowrap;
-}
+#overlay-msg{ position:absolute; top:15%; left:50%; transform:translateX(-50%); background:rgba(6,10,20,0.9); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,45,85,0.2); z-index:170; opacity:0; pointer-events:none; transition:opacity .2s; white-space: nowrap; }
 #overlay-msg.show{ opacity:1; }
 
-/* コントロール領域 */
-.controls{
-  width:100%;
-  background:var(--panel-dark);
-  border-top:1px solid rgba(255,255,255,0.1);
-  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
-  display:flex; flex-direction:column; align-items:center; gap:16px;
-  box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-  z-index:200;
-}
-
+.controls{ width:100%; background:var(--panel-dark); border-top:1px solid rgba(255,255,255,0.1); padding: 16px 20px calc(16px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; align-items:center; gap:16px; box-shadow: 0 -10px 30px rgba(0,0,0,0.8); z-index:200; }
 #status-msg{ font-size:.9rem; color:#9aa3b2; text-align:center; min-height:1.2em; font-weight: 500;}
 #status-msg.ready{ color:var(--ready-green); text-shadow:var(--glow-green); }
 
-#scan-trigger{
-  width:100%; max-width:400px; height:60px; border-radius:16px; border:none;
-  background: linear-gradient(135deg, var(--accent-red), #ff6a88);
-  color:#fff; font-weight:800; font-size:1.1rem; box-shadow:var(--glow-red);
-  -webkit-tap-highlight-color:transparent;
-}
+#scan-trigger{ width:100%; max-width:400px; height:60px; border-radius:16px; border:none; background: linear-gradient(135deg, var(--accent-red), #ff6a88); color:#fff; font-weight:800; font-size:1.1rem; box-shadow:var(--glow-red); cursor: pointer; }
 
-.action-group{
-  width:100%; max-width:400px;
-  display:flex; gap:12px; justify-content: space-between;
-}
-.sub-btn{
-  flex: 1; height:48px; border-radius:12px; border:1px solid rgba(255,255,255,0.15);
-  background:rgba(255,255,255,0.05); color:#fff; font-weight:600; font-size:.95rem;
-  display:flex; align-items:center; justify-content:center; text-decoration:none;
-  cursor: pointer;
-}
+.action-group{ width:100%; max-width:400px; display:flex; gap:12px; justify-content: space-between; }
+.sub-btn{ flex: 1; height:48px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:#fff; font-weight:600; font-size:.95rem; display:flex; align-items:center; justify-content:center; text-decoration:none; cursor: pointer; }
 
-/* モーダル */
 #result-modal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; justify-content:center; align-items:center; padding:20px; }
 .modal-card{ width:100%; max-width:450px; background:#16182a; border-radius:24px; padding:24px; text-align:center; border:1px solid rgba(255,45,85,0.3); }
 .modal-name{ font-size:1.6rem; color:var(--accent-red); font-weight:900; margin:10px 0; }
 .modal-cta{ width:100%; height:50px; border-radius:12px; border:none; background:var(--accent-red); color:#fff; font-weight:700; margin-top:15px; cursor: pointer;}
-
-@media (max-height: 650px) {
-  #scan-trigger { height: 50px; }
-  .controls { padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); gap: 10px; }
-}
 </style>
 </head>
 <body>
-
 <div id="reader-wrapper">
-  <div id="success-flash" aria-hidden="true"></div>
-  <div id="error-flash" aria-hidden="true"></div>
+  <div id="success-flash"></div>
+  <div id="error-flash"></div>
   <div id="reader"></div>
   <div id="overlay-msg"></div>
 </div>
-
 <div class="controls">
   <div id="status-msg">スキャン準備中...</div>
   <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
   <div class="action-group">
-    <button class="sub-btn" id="cam-toggle-btn" onclick="switchCamera()">🔄 カメラ切替</button>
-    <a href="index.html" class="sub-btn">元の画面に戻る</a>
+    <button class="sub-btn" onclick="switchCamera()">🔄 カメラ切替</button>
+    <a href="index.html" class="sub-btn">戻る</a>
   </div>
 </div>
-
 <div id="result-modal">
   <div class="modal-card">
-    <div id="modal-title" style="font-size:0.8rem; color:#9aa3b2;">DATA ACQUIRED</div>
+    <div style="font-size:0.8rem; color:#9aa3b2;">DATA ACQUIRED</div>
     <div id="modal-name" class="modal-name"></div>
     <div id="modal-desc" style="color:#cfe7ff; margin-bottom:15px;"></div>
     <button class="modal-cta" onclick="confirmAndReturn()">閉じて元に戻る</button>
@@ -130,8 +75,7 @@ body{
 
 <script>
 let html5QrCode = null;
-let cameras = [];
-let currentFacingMode = "environment"; // 標準を外カメラに設定
+let currentFacingMode = "environment"; 
 let lastResult = null;
 let scanArmed = false;
 let gameData = null;
@@ -145,97 +89,42 @@ async function loadData(){
     const res = await fetch('magics.json');
     gameData = await res.json();
   }catch(e){ gameData = { magics: [], media_data: {} }; }
-
-  try{
-    // 権限確認も兼ねて一度リストを取得
-    cameras = await Html5Qrcode.getCameras();
-    // 起動時は environment (外カメラ) でスタート
-    await startScanner("environment");
-  }catch(e){
-    setStatus("カメラの使用を許可してください", false);
-  }
+  startScanner("environment");
 }
 
-async function startScanner(facingOrId){
-  // 既存のインスタンスを徹底的に停止
-  if(html5QrCode){
-    try{ await html5QrCode.stop(); }catch(e){}
-    html5QrCode = null;
-  }
-  
+async function startScanner(facing){
+  if(html5QrCode){ await html5QrCode.stop().catch(()=>{}); html5QrCode = null; }
   if(focusIntervalId){ clearInterval(focusIntervalId); focusIntervalId = null; }
-
-  lastResult = null; 
-  scanArmed = false;
+  lastResult = null; scanArmed = false;
   setStatus("スキャナーを起動中...", false);
-
   html5QrCode = new Html5Qrcode("reader");
-
-  const config = {
-    fps: 25,
-    qrbox: (viewWidth, viewHeight) => {
-        return { width: viewWidth * 0.8, height: viewHeight * 0.8 };
-    },
-    experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-    videoConstraints: {
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
-      // facingMode が指定されている場合はそれを使用し、そうでなければdeviceId
-      facingMode: typeof facingOrId === "string" && (facingOrId === "user" || facingOrId === "environment") ? facingOrId : undefined,
-      deviceId: typeof facingOrId === "object" ? facingOrId : undefined
-    }
-  };
-
+  const config = { fps: 25, qrbox: (w, h) => ({ width: w * 0.8, height: h * 0.8 }) };
   try{
-    // 引数が文字列ならfacingMode、オブジェクト（deviceId）ならその指定で起動
-    const source = (facingOrId === "user" || facingOrId === "environment") 
-                   ? { facingMode: facingOrId } 
-                   : { deviceId: facingOrId };
-
-    await html5QrCode.start(source, config, (decodedText) => {
-      lastResult = decodedText;
-      if(!scanArmed){
-        scanArmed = true;
-        setStatus("解析確定可能", true);
-      }
+    await html5QrCode.start({ facingMode: facing }, config, (text) => {
+      lastResult = text;
+      if(!scanArmed){ scanArmed = true; setStatus("解析確定可能", true); }
     });
-
-    currentFacingMode = (facingOrId === "user") ? "user" : "environment";
+    currentFacingMode = facing;
     setStatus("コードを探索中...", false);
     enableAutoFocus();
-  }catch(err){
-    console.error("Camera Start Error:", err);
-    setStatus("カメラの起動に失敗しました", false);
-  }
+  }catch(err){ setStatus("カメラの起動に失敗しました", false); }
 }
 
 async function switchCamera(){
   if(isSwitching) return;
   isSwitching = true;
-  
-  // モードを反転
   const nextMode = (currentFacingMode === "environment") ? "user" : "environment";
-  setStatus("カメラ切り替え中...", false);
-  
-  try {
-    await startScanner(nextMode);
-  } catch(e) {
-    showOverlay("切り替えに失敗しました");
-  } finally {
-    isSwitching = false;
-  }
+  await startScanner(nextMode);
+  isSwitching = false;
 }
 
 function enableAutoFocus(){
   const apply = async () => {
     try {
-      if (!html5QrCode) return;
-      const track = html5QrCode.getRunningTrack();
+      const track = html5QrCode?.getRunningTrack();
       if (!track) return;
       const caps = track.getCapabilities();
-      const constraints = {};
-      if (caps.focusMode && caps.focusMode.includes('continuous')) constraints.focusMode = 'continuous';
-      if (Object.keys(constraints).length > 0) await track.applyConstraints({ advanced: [constraints] });
+      if (caps.focusMode?.includes('continuous')) await track.applyConstraints({ advanced: [{focusMode: 'continuous'}] });
     } catch (e) {}
   };
   apply();
@@ -243,11 +132,7 @@ function enableAutoFocus(){
 }
 
 function pressScan(){
-  if(!scanArmed || !lastResult){
-    showOverlay("対象を中央に合わせてください");
-    playErrorEffect();
-    return;
-  }
+  if(!scanArmed || !lastResult){ showOverlay("対象を捉えてください"); playErrorEffect(); return; }
   handleSuccess(lastResult);
 }
 
@@ -255,42 +140,32 @@ async function handleSuccess(rawText){
   const text = (rawText||"").replace(/\*/g,"");
   if(text.startsWith("MEDIA:")){
     playSuccessEffect();
-    setTimeout(async () => {
-      localStorage.setItem('currentMedia', text.split(":")[1] || "");
-      if(html5QrCode) await html5QrCode.stop();
-      location.href = "index.html";
-    }, 400);
+    localStorage.setItem('currentMedia', text.split(":")[1] || "");
+    confirmAndReturn();
     return;
   }
-
-  const magic = (gameData?.magics) ? gameData.magics.find(m => m.code === text) : null;
+  const magic = gameData?.magics?.find(m => m.code === text);
   if(magic){
     playSuccessEffect();
     let my = JSON.parse(localStorage.getItem('myMagics') || "[]");
     if(!my.includes(magic.id)){ my.push(magic.id); localStorage.setItem('myMagics', JSON.stringify(my)); }
-    setTimeout(()=> showModal(magic.name, magic.desc), 300);
+    showModal(magic.name, magic.desc);
   } else {
     playErrorEffect();
     showOverlay("未登録のコードです");
-    setTimeout(()=> { scanArmed=false; lastResult=null; setStatus("コードを探索中...", false); }, 1000);
+    scanArmed=false; lastResult=null;
   }
 }
 
 function setStatus(text, ready){
   const st = document.getElementById('status-msg');
-  if(st) {
-    st.innerText = text;
-    st.classList.toggle('ready', !!ready);
-  }
+  st.innerText = text; st.classList.toggle('ready', !!ready);
 }
 
 function showOverlay(msg){
   const el = document.getElementById('overlay-msg');
-  if(el) {
-    el.innerText = msg;
-    el.classList.add('show');
-    setTimeout(()=> el.classList.remove('show'), 2000);
-  }
+  el.innerText = msg; el.classList.add('show');
+  setTimeout(()=> el.classList.remove('show'), 2000);
 }
 
 function playSuccessEffect(){
@@ -316,15 +191,14 @@ function cancelModal(){
   scanArmed=false; lastResult=null; setStatus("コードを探索中...", false);
 }
 
-function confirmAndReturn(){
-  if(html5QrCode) html5QrCode.stop().catch(()=>{});
+async function confirmAndReturn(){
+  if(html5QrCode) await html5QrCode.stop().catch(()=>{});
   location.href = "index.html";
 }
 
-window.onpagehide = window.onbeforeunload = async () => {
-  if(html5QrCode) try{ await html5QrCode.stop(); }catch(e){}
+window.addEventListener('pagehide', () => {
   if(focusIntervalId) clearInterval(focusIntervalId);
-};
+});
 </script>
 </body>
 </html>
