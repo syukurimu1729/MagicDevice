@@ -131,12 +131,12 @@ body{
 <script>
 let html5QrCode = null;
 let cameras = [];
-let cameraIndex = 0;
+let currentFacingMode = "environment"; // 標準を外カメラに設定
 let lastResult = null;
 let scanArmed = false;
 let gameData = null;
 let focusIntervalId = null;
-let isSwitching = false; // 切り替え中の連打防止
+let isSwitching = false;
 
 window.onload = loadData;
 
@@ -147,24 +147,19 @@ async function loadData(){
   }catch(e){ gameData = { magics: [], media_data: {} }; }
 
   try{
+    // 権限確認も兼ねて一度リストを取得
     cameras = await Html5Qrcode.getCameras();
-    if(cameras && cameras.length > 0){
-      // 初期状態は背面カメラを探す
-      const foundBack = cameras.findIndex(c => /back|rear|environment/i.test(c.label));
-      cameraIndex = foundBack >= 0 ? foundBack : 0;
-    }
-    await startScanner();
+    // 起動時は environment (外カメラ) でスタート
+    await startScanner("environment");
   }catch(e){
-    setStatus("カメラが許可されていません", false);
+    setStatus("カメラの使用を許可してください", false);
   }
 }
 
-async function startScanner(){
-  // 既存のインスタンスを停止
+async function startScanner(facingOrId){
+  // 既存のインスタンスを徹底的に停止
   if(html5QrCode){
-    try{ 
-      await html5QrCode.stop(); 
-    }catch(e){ console.warn("Stop failed", e); }
+    try{ await html5QrCode.stop(); }catch(e){}
     html5QrCode = null;
   }
   
@@ -172,29 +167,31 @@ async function startScanner(){
 
   lastResult = null; 
   scanArmed = false;
-  setStatus("コードを探索中...", false);
+  setStatus("スキャナーを起動中...", false);
 
   html5QrCode = new Html5Qrcode("reader");
 
-  // 解像度とフォーカスの設定
   const config = {
     fps: 25,
+    qrbox: (viewWidth, viewHeight) => {
+        return { width: viewWidth * 0.8, height: viewHeight * 0.8 };
+    },
     experimentalFeatures: { useBarCodeDetectorIfSupported: true },
     videoConstraints: {
       width: { ideal: 1920 },
-      height: { ideal: 1080 }
+      height: { ideal: 1080 },
+      // facingMode が指定されている場合はそれを使用し、そうでなければdeviceId
+      facingMode: typeof facingOrId === "string" && (facingOrId === "user" || facingOrId === "environment") ? facingOrId : undefined,
+      deviceId: typeof facingOrId === "object" ? facingOrId : undefined
     }
   };
 
   try{
-    // カメラの指定方法
-    let source;
-    if (cameras && cameras.length > 0) {
-      source = { deviceId: { exact: cameras[cameraIndex].id } };
-    } else {
-      source = { facingMode: "environment" };
-    }
-    
+    // 引数が文字列ならfacingMode、オブジェクト（deviceId）ならその指定で起動
+    const source = (facingOrId === "user" || facingOrId === "environment") 
+                   ? { facingMode: facingOrId } 
+                   : { deviceId: facingOrId };
+
     await html5QrCode.start(source, config, (decodedText) => {
       lastResult = decodedText;
       if(!scanArmed){
@@ -203,37 +200,27 @@ async function startScanner(){
       }
     });
 
+    currentFacingMode = (facingOrId === "user") ? "user" : "environment";
+    setStatus("コードを探索中...", false);
     enableAutoFocus();
   }catch(err){
-    console.error(err);
-    // ID指定で失敗した場合はfacingModeでリトライ
-    try {
-      await html5QrCode.start({ facingMode: "environment" }, config, (text) => {
-        lastResult = text;
-        if(!scanArmed){ scanArmed = true; setStatus("解析確定可能", true); }
-      });
-      enableAutoFocus();
-    } catch(e2) {
-      setStatus("カメラの起動に失敗しました", false);
-    }
+    console.error("Camera Start Error:", err);
+    setStatus("カメラの起動に失敗しました", false);
   }
 }
 
 async function switchCamera(){
   if(isSwitching) return;
-  if(!cameras || cameras.length <= 1) {
-    showOverlay("切り替え可能なカメラがありません");
-    return;
-  }
-
   isSwitching = true;
+  
+  // モードを反転
+  const nextMode = (currentFacingMode === "environment") ? "user" : "environment";
   setStatus("カメラ切り替え中...", false);
   
-  // インデックスを回す
-  cameraIndex = (cameraIndex + 1) % cameras.length;
-  
   try {
-    await startScanner();
+    await startScanner(nextMode);
+  } catch(e) {
+    showOverlay("切り替えに失敗しました");
   } finally {
     isSwitching = false;
   }
