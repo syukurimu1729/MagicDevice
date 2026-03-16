@@ -9,10 +9,8 @@
             --bg-color: #0d0d1a;
             --panel-bg: rgba(20, 20, 45, 0.7);
             --accent-red: #ff2d55;
-            --accent-rev: #bc13fe;
             --accent-blue: #00f2fe;
             --glow-red: 0 0 15px rgba(255, 45, 85, 0.6);
-            --glow-rev: 0 0 15px rgba(188, 19, 254, 0.6);
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -93,28 +91,6 @@
         .btn-cast:active { transform: scale(0.95); filter: brightness(1.2); }
         .btn-cast:disabled { background: #333; box-shadow: none; cursor: not-allowed; opacity: 0.5; }
 
-        body.is-reversed { --accent-red: var(--accent-rev); --glow-red: var(--glow-rev); }
-
-        .reverse-container {
-            margin-bottom: 15px; padding: 10px; border-radius: 50px;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            background: rgba(188, 19, 254, 0.05); border: 1px solid rgba(188, 19, 254, 0.3);
-            width: fit-content; margin: 0 auto 15px;
-        }
-
-        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #222; transition: .4s; border-radius: 34px; border: 1px solid rgba(255,255,255,0.1);
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
-            background-color: #fff; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: rgba(155, 48, 255, 0.4); border-color: var(--accent-rev); }
-        input:checked + .slider:before { transform: translateX(24px); background-color: var(--accent-rev); box-shadow: 0 0 15px var(--accent-rev); }
-
         .btn-url {
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
@@ -152,14 +128,6 @@
     </div>
 
     <div id="action-ui">
-        <div id="reverse-ui" class="reverse-container hidden">
-            <span style="font-size: 0.7rem; font-weight: bold; color: var(--accent-rev);">REVERSE LOGIC</span>
-            <label class="switch">
-                <input type="checkbox" id="reverse-switch" onchange="toggleReverseMode()">
-                <span class="slider"></span>
-            </label>
-        </div>
-
         <div class="panel" style="display: flex; flex-direction: column; align-items: center;">
             <div class="select-wrapper">
                 <select id="magic-select">
@@ -189,11 +157,6 @@
             } catch (e) { console.error("Data Load Error"); }
         }
 
-        function toggleReverseMode() {
-            const isReverse = document.getElementById('reverse-switch').checked;
-            document.body.classList.toggle('is-reversed', isReverse);
-        }
-
         function updateUI() {
             const mediaId = localStorage.getItem('currentMedia');
             const myMagics = JSON.parse(localStorage.getItem('myMagics')) || [];
@@ -203,23 +166,36 @@
             const displayImg = document.getElementById('display-img');
             const select = document.getElementById('magic-select');
             const noMagicMsg = document.getElementById('no-magic-msg');
-            const reverseUi = document.getElementById('reverse-ui');
             const undoBtn = document.getElementById('undo-button');
             const urlAction = document.getElementById('url-action');
             const jumpLink = document.getElementById('jump-link');
 
-            // 1. 魔法プルダウンの更新
+            // 1. 魔法プルダウンの更新 (反転魔法を統合)
+            const currentSelection = select.value; // 現在の選択を維持するための保持
             select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
             let hasMagic = false;
+            const canReverse = myMagics.includes('Reverse');
+
             gameData.magics.forEach(m => {
+                // 通常の魔法を追加
                 if (myMagics.includes(m.id) && m.id !== 'Reverse') {
                     const opt = document.createElement('option');
                     opt.value = m.id;
                     opt.innerText = m.name;
                     select.appendChild(opt);
+                    
+                    // 反転魔法を習得している場合、その魔法の反転版を追加
+                    if (canReverse) {
+                        const revOpt = document.createElement('option');
+                        revOpt.value = m.id + "_rev";
+                        revOpt.innerText = m.name + "・反転";
+                        select.appendChild(revOpt);
+                    }
                     hasMagic = true;
                 }
             });
+
+            if (currentSelection) select.value = currentSelection;
 
             if (!hasMagic) {
                 select.classList.add('hidden');
@@ -231,10 +207,8 @@
                 document.getElementById('cast-button').disabled = false;
             }
 
-            if (myMagics.includes('Reverse')) reverseUi.classList.remove('hidden');
-
-            // 2. 媒体データの反映とボタンの即時表示
-            urlAction.classList.add('hidden'); // 一旦リセット
+            // 2. 媒体データの反映
+            urlAction.classList.add('hidden');
 
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
@@ -242,7 +216,6 @@
                 displayImg.src = "assets/media/" + data.default_img;
                 imgArea.classList.remove('hidden');
 
-                // --- 修正箇所：読み込んだデータにurlがあればボタンを表示 ---
                 if (data.url) {
                     jumpLink.href = data.url;
                     jumpLink.innerText = data.url_text ? data.url_text : "空間転送を開始する";
@@ -254,36 +227,32 @@
                 displayImg.src = ""; 
             }
 
-            // UNDOボタン
             if (history.length > 0) undoBtn.classList.remove('disabled');
             else undoBtn.classList.add('disabled');
         }
 
         function castMagic() {
             const mediaId = localStorage.getItem('currentMedia');
-            const magicId = document.getElementById('magic-select').value;
-            const isReverse = document.getElementById('reverse-switch').checked;
+            const targetKey = document.getElementById('magic-select').value; // "_rev" 付きのIDが直接入る
             const resultText = document.getElementById('result-text');
             const displayImg = document.getElementById('display-img');
             const urlAction = document.getElementById('url-action');
             const jumpLink = document.getElementById('jump-link');
 
-            if (!magicId || !mediaId || !gameData.media_data[mediaId]) return;
+            if (!targetKey || !mediaId || !gameData.media_data[mediaId]) return;
 
             displayImg.classList.remove('img-anim');
             void displayImg.offsetWidth;
             displayImg.classList.add('img-anim');
 
-            const targetKey = isReverse ? magicId + "_rev" : magicId;
             const media = gameData.media_data[mediaId];
             const effect = (media.effects && media.effects[targetKey]) ? media.effects[targetKey] : null;
             
             if (effect) {
-                history.push(mediaId); // 履歴保存
+                history.push(mediaId);
                 resultText.innerText = effect.res;
                 displayImg.src = "assets/media/" + effect.img;
 
-                // 魔法効果でURLが設定されている場合（優先）
                 if (effect.url) {
                     jumpLink.href = effect.url;
                     jumpLink.innerText = effect.url_text ? effect.url_text : "空間転送を開始する";
@@ -298,7 +267,6 @@
                 }
             } else {
                 resultText.innerText = "何も起きなかったようだ...";
-                // エフェクトがなくても現在のIDの設定に基づいてUIを更新
                 setTimeout(updateUI, 500);
             }
         }
