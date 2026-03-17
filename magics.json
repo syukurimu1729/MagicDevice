@@ -32,68 +32,79 @@
     }
   ],
   "media_data": {
-    "CASTER_PUZZLE_ORIGIN": {
-      "default_img": "使用者_元.jpg",
-      "effects": {
-        "Apply": {
-          "res": "番号をつけることができた！",
-          "next_id": "CASTER_PUZZLE_APPLYED" 
-        },
-        "Hint": {
-          "res": "何かを「つける」ことができれば..."
-        }
-      }
+    "BOOK0": {
+      "default_img": "BOOK0.jpg"
     },
-    "CASTER_PUZZLE_APPLYED": {
-      "default_img": "使用者_つける.jpg",
-      "effects": {
-        "Hint": {
-          "res": "この机の並び、どこかで...？"
-        }
-      }
-    },
-    "MAGICNAME_PUZZLE_ORIGIN": {
-      "default_img": "名前_元.jpg",
+    "BOOK1": {
+      "default_img": "BOOK1.jpg",
       "effects": {
         "Color": {
           "res": "色をつけることができた！",
-          "next_id": "MAGICNAME_PUZZLE_COLORED"
+          "next_id": "BOOK1_COLOR" 
         },
         "Hint": {
-          "res": "色が消えてしまっているようだ...？"
+          "res": "色がついていないみたいだ..."
         }
       }
     },
-    "MAGICNAME_PUZZLE_COLORED": {
-      "default_img": "名前_色.jpg",
+    "BOOK1_COLOR": {
+      "default_img": "BOOK1_COLOR.jpg",
       "effects": {
         "Hint": {
-          "res": "赤と青を混ぜると...?"
+          "res": "赤と青が混ざると...？"
         }
       }
     },
-    "MEDIUM_PUZZLE_ORIGIN": {
-      "default_img": "媒体_元.jpg",
+    "BOOK2": {
+      "default_img": "BOOK2.jpg",
+      "effects": {
+        "Apply": {
+          "res": "番号をつけることができた！",
+          "next_id": "BOOK2_APPLY"
+        },
+        "Hint": {
+          "res": "番号を「つける」には...?"
+        }
+      }
+    },
+    "BOOK2_APPLY": {
+      "default_img": "BOOK2_APPLY.jpg",
+      "effects": {
+        "Hint": {
+          "res": "カフェテリアの前でこんな机の配置があったような...?"
+        }
+      }
+    },
+    "BOOK3": {
+      "default_img": "BOOK3.jpg",
       "effects": {
         "Hint": {
           "res": "この文字を正しく繋げられれば...？"
         },
-        "Apply": {
+        "Connect": {
           "res": "文字を正しく繋げることができた！",
-          "next_id": "MEDIUM_PUZZLE_CONNECTED"
+          "next_id": "BOOK3_CONNECT"
         }
       }
     },
-    "MEDIUM_PUZZLE_CONNECTED": {
-      "default_img": "媒体_そろえた後.jpg",
+    "BOOK3_CONNECT": {
+      "default_img": "BOOK3_CONNECT.jpg",
       "effects": {
         "Hint": {
           "res": "左から右に読んでわからないときは、上から下へと読もう"
         }
       }
     },
+    "BOOK4": {
+      "default_img": "BOOK4.jpg",
+      "effects": {
+        "Hint": {
+          "res": "地下室に魔法陣があるようだ"
+        }
+      }
+    },
     "FORMGAME": {
-      "default_img": "魔法陣.jpg",
+      "default_img": "FROMGAME.jpg",
       "url": "https://syukurimu1729.github.io/FlowConnect/",
       "url_text": "魔法陣を展開する",
       "effects": {
@@ -102,12 +113,12 @@
         },
         "Color_rev": {
           "res": "色が消えて好きにつなげられるようになった！",
-          "next_id": "FORMGAME_MONO"
+          "next_id": "FROMGAME_COLOR_REV"
         }
       }
     },
-    "FORMGAME_MONO": {
-      "default_img": "魔法陣_モノ.jpg",
+    "FROMGAME_COLOR_REV": {
+      "default_img": "FROMGAME_COLOR_REV.jpg",
       "url": "https://syukurimu1729.github.io/FlowConnect/monogame.html",
       "url_text": "魔法陣を展開する",
       "effects": {
@@ -116,101 +127,72 @@
         },
         "Apply": {
           "res": "数字がついて正しい順番がわかった！",
-          "next_id": "FORMGAME_INT"
+          "next_id": "FROMGAME_APPLY"
         }
       }
     },
-    "FORMGAME_INT": {
-      "default_img": "魔法陣_数字.jpg",
+    "FROMGAME_APPLY": {
+      "default_img": "FROMGAME_APPLY.jpg",
       "url": "https://syukurimu1729.github.io/FlowConnect/numgame.html",
       "url_text": "魔法陣を展開する"
     },
-    "RULES_ONE_ORIGIN": {
-      "default_img": "RULEONE.jpg",
+    "RULE1": {
+      "default_img": "RULE1.jpg",
       "effects": {
         "Hint": {
-          "res": "カメラ→カメ。最後が消えてる...？"
+          "res": "最後が消えてる...？"
         }
       }
     },
-    "RULES_TWO_ORIGIN": {
-      "default_img": "RULETWO.jpg",
+    "RULE2": {
+      "default_img": "RULE2.jpg",
       "effects": {
         "Hint": {
-          "res": "イカ→カイ。逆から読むと...？"
+          "res": "逆から読むと...？"
         }
       }
     },
-    "RULES_FOUR_ORIGIN": {
-      "default_img": "RULEFOUR.jpg",
+    "RULE3": {
+      "default_img": "RULE3.jpg",
       "effects": {
         "Hint": {
-          "res": "カギ→カキ。濁点が...？"
+          "res": "濁点が...？"
         }
       }
     },
-    "MAGICPAGES_ONE_ORIGIN": {
-      "default_img": "MAGICPAGESONE.jpg",
+    "RULE4": {
+      "default_img": "RULE4.jpg",
       "effects": {
+        "Hint": {
+          "res": "50音で考えると...？"
+        }
       }
     },
-    "THREES_ONE_ORIGIN": {
-      "default_img": "THREESONE.jpg",
+    "START1": {
+      "default_img": "START1.jpg",
       "effects": {
         "Hint": {
           "res": "50音表で考えてみると...？"
         }
       }
     },
-    "THREES_TWO_ORIGIN": {
-      "default_img": "THREESTWO.jpg",
+    "START2": {
+      "default_img": "START2.jpg",
       "effects": {
         "Hint": {
           "res": "26といえば、アルファベット...？"
         }
       }
     },
-    "THREES_THREE_ORIGIN": {
-      "default_img": "THREESTWO.jpg",
+    "START3": {
+      "default_img": "START3.jpg",
       "effects": {
         "Hint": {
           "res": "47といえば、都道府県...？"
         }
       }
     },
-    "MINI_ONE_ORIGIN": {
-      "default_img": "MINIONE.jpg",
-      "effects": {
-        "Hint": {
-          "res": "この配置、スマホで見たような？"
-        }
-      }
-    },
-    "MINI_TWO_ORIGIN": {
-      "default_img": "MINITWO.jpg",
-      "effects": {
-        "Hint": {
-          "res": "左からかぐ、らっぱ、ぼうし、かん、どみのを割り当てると？"
-        }
-      }
-    },
-    "MINI_THREE_ORIGIN": {
-      "default_img": "MINITHREE.jpg",
-      "effects": {
-        "Hint": {
-          "res": "左側で書けているのは？"
-        }
-      }
-    },
-    "MINI_FOUR_ORIGIN": {
-      "default_img": "MINIFOUR.jpg",
-      "effects": {
-        "Hint": {
-          "res": "矢印で四角同士を比較しているみたい。前の逆は後ろ？"
-        }
-      }
-    },
-    "SEAT_ORIGIN": {
+    "SEAT": {
       "default_img": "SEAT.jpg",
       "effects": {
         "Hint": {
@@ -218,7 +200,7 @@
         }
       }
     },
-    "CUP_ORIGIN": {
+    "CUP": {
       "default_img": "CUP.jpg",
       "effects": {
         "Hint": {
@@ -226,7 +208,7 @@
         }
       }
     },
-    "ARROW_ORIGIN": {
+    "ARROW": {
       "default_img": "ARROW.jpg",
       "effects": {
         "Hint": {
@@ -234,8 +216,8 @@
         }
       }
     },
-    "CONNECTION_ORIGIN": {
-      "default_img": "CONNORIGIN.jpg",
+    "CONNECTION": {
+      "default_img": "CONNECTION.jpg",
       "effects": {
         "Hint": {
           "res": "これにつなげる魔法を使ってみると...？"
