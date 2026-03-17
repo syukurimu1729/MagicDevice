@@ -137,13 +137,34 @@ function pressScan(){
 }
 
 async function handleSuccess(rawText){
-  const text = (rawText||"").replace(/\*/g,"");
-  if(text.startsWith("MEDIA:")){
+  // 汚れ（アスタリスク）除去と整形
+  const text = (rawText||"").replace(/\*/g,"").trim();
+  
+  // --- 特定URLの判定（MEDIA接続への変換） ---
+  const flowConnectUrl = "https://syukurimu1729.github.io/FlowConnect/";
+  if(text === flowConnectUrl || text === flowConnectUrl + "index.html"){
     playSuccessEffect();
-    localStorage.setItem('currentMedia', text.split(":")[1] || "");
-    confirmAndReturn();
+    // 媒体ID「FORMGAME」として保存して遷移
+    localStorage.setItem('currentMedia', "FORMGAME");
+    showOverlay("魔法陣に接続中...");
+    setTimeout(() => {
+      confirmAndReturn();
+    }, 800);
     return;
   }
+
+  // --- 既存の「MEDIA:」形式の判定 ---
+  if(text.startsWith("MEDIA:")){
+    const mediaId = text.split(":")[1];
+    if(gameData?.media_data?.[mediaId]){
+      playSuccessEffect();
+      localStorage.setItem('currentMedia', mediaId);
+      confirmAndReturn();
+      return;
+    }
+  }
+
+  // --- 通常の魔法（Magics）の判定 ---
   const magic = gameData?.magics?.find(m => m.code === text);
   if(magic){
     playSuccessEffect();
@@ -153,13 +174,22 @@ async function handleSuccess(rawText){
   } else {
     playErrorEffect();
     showOverlay("未登録のコードです");
-    scanArmed=false; lastResult=null;
+    resetScannerState();
   }
+}
+
+function resetScannerState(){
+  scanArmed = false; 
+  lastResult = null; 
+  setStatus("コードを探索中...", false);
 }
 
 function setStatus(text, ready){
   const st = document.getElementById('status-msg');
-  st.innerText = text; st.classList.toggle('ready', !!ready);
+  if(st) {
+    st.innerText = text; 
+    st.classList.toggle('ready', !!ready);
+  }
 }
 
 function showOverlay(msg){
@@ -188,7 +218,7 @@ function showModal(name, desc){
 
 function cancelModal(){
   document.getElementById('result-modal').style.display = 'none';
-  scanArmed=false; lastResult=null; setStatus("コードを探索中...", false);
+  resetScannerState();
 }
 
 async function confirmAndReturn(){
