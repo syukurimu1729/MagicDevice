@@ -216,8 +216,8 @@
         }
       }
     },
-    "CONNECTION": {
-      "default_img": "CONNECTION.jpg",
+    "LINK": {
+      "default_img": "LINK.jpg",
       "effects": {
         "Hint": {
           "res": "これにつなげる魔法を使ってみると...？"
