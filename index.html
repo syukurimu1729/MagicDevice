@@ -232,7 +232,7 @@
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
                 mediaTitle.innerText = "ANALYZING...";
-                displayImg.src = "assets/media/" + data.default_img;
+                displayImg.src = "media/assets/" + data.default_img;
                 imgArea.classList.remove('hidden');
 
                 if (data.url) {
@@ -269,7 +269,7 @@
             if (effect) {
                 history.push(mediaId);
                 resultText.innerText = effect.res;
-                displayImg.src = "assets/media/" + effect.img;
+                displayImg.src = "media/assets/" + effect.img;
 
                 if (effect.url) {
                     jumpLink.href = effect.url;
