@@ -227,6 +227,14 @@
           "res": "矢印をつなげることができた！"
         }
       }
+    },
+    "EXAMPLE": {
+      "default_img": "EXAMPLE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "ヒントの魔法が使えたようだ？"
+        }
+      }
     }
   }
 }
