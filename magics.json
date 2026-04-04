@@ -208,31 +208,34 @@
         }
       }
     },
-    "ARROW": {
-      "default_img": "ARROW.jpg",
+    "LINK": {
+      "default_img": "LINK.jpg",
       "effects": {
         "Hint": {
           "res": "それぞれの規則を順にあてはめれば...？"
         }
       }
     },
-    "LINK": {
-      "default_img": "LINK.jpg",
+    "HINT1": {
+      "default_img": "HINT1.jpg",
       "effects": {
-        "Hint": {
-          "res": "これにつなげる魔法を使ってみると...？"
-        },
-        "Connect": {
-          "img": "CONNECTED.jpg",
-          "res": "矢印をつなげることができた！"
-        }
+      }
+    },
+    "HINT2": {
+      "default_img": "HINT2.jpg",
+      "effects": {
+      }
+    },
+    "HINT3": {
+      "default_img": "HINT3.jpg",
+      "effects": {
       }
     },
     "EXAMPLE": {
       "default_img": "EXAMPLE.jpg",
       "effects": {
         "Hint": {
-          "res": "ヒントの魔法が使えたようだ？"
+          "res": "ヒントの魔法が使えたようだ"
         }
       }
     }
