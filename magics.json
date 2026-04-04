@@ -229,6 +229,21 @@
     "HINT3": {
       "default_img": "HINT3.jpg",
       "effects": {
+        "Hint": {
+          "res": "この紙をつなげることができれば..."
+        },
+        "Connect": {
+          "res": "魂が生まれ変わるときの規則がわかった！",
+          "next_id": "CONNECTION"
+        }
+      }
+    },
+    "CONNECTION": {
+      "default_img": "CONNECTION.jpg",
+      "effects": {
+        "Hint": {
+          "res": "この矢印、前に見たような"
+        }
       }
     },
     "EXAMPLE": {
