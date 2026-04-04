@@ -156,7 +156,7 @@
       "default_img": "RULE3.jpg",
       "effects": {
         "Hint": {
-          "res": "濁点が...？"
+          "res": "50音で考えると...？"
         }
       }
     },
@@ -164,7 +164,7 @@
       "default_img": "RULE4.jpg",
       "effects": {
         "Hint": {
-          "res": "50音で考えると...？"
+          "res": "濁点が...？"
         }
       }
     },
