@@ -76,6 +76,18 @@
       "effects": {
         "Hint": {
           "res": "赤と青が混ざると...？"
+        },
+        "True": {
+          "res": "真実を見通すことが出来た",
+          "next_id": "BOOK1_TRUE"
+        }
+      }
+    },
+    "BOOK1_TRUE": {
+      "default_img": "BOOK1_TRUE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "赤が消えたら、次に長いのは...？"
         }
       }
     },
@@ -88,6 +100,18 @@
         },
         "Hint": {
           "res": "番号を「つける」には...?"
+        },
+        "True": {
+          "res": "真実を見通すことが出来た",
+          "next_id": "BOOK2_TRUE"
+        }
+      }
+    },
+    "BOOK2_TRUE": {
+      "default_img": "BOOK2_TRUE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "青の目、真実の眼を持つものと言えば...？"
         }
       }
     },
@@ -108,6 +132,18 @@
         "Connect": {
           "res": "文字を正しく繋げることができた！",
           "next_id": "BOOK3_CONNECT"
+        },
+        "True": {
+          "res": "真実を見通すことが出来た",
+          "next_id": "BOOK3_TRUE"
+        }
+      }
+    },
+    "BOOK3_TRUE": {
+      "default_img": "BOOK3_TRUE.jpg",
+      "effects": {
+        "Hint": {
+          "res": "もう一つの御守りは赤いままだ..."
         }
       }
     },
@@ -138,6 +174,10 @@
         "Color_rev": {
           "res": "色が消えて好きにつなげられるようになった！",
           "next_id": "FROMGAME_COLOR_REV"
+        },
+        "True": {
+          "res": "真実を見通すことが出来た",
+          "next_id": "FORMGAME_TRUE"
         }
       }
     },
@@ -159,6 +199,11 @@
       "default_img": "FROMGAME_APPLY.jpg",
       "url": "https://syukurimu1729.github.io/FlowConnect/numgame.html",
       "url_text": "魔法陣を展開する"
+    },
+    "FORMGAME_TRUE": {
+      "default_img": "TRUEGAME.jpg",
+      "url": "https://syukurimu1729.github.io/FlowConnect/truegame.html",
+      "url_text": "犠牲のない魔法陣を展開する"
     },
     "RULE1": {
       "default_img": "RULE1.jpg",
@@ -216,6 +261,30 @@
         }
       }
     },
+    "START4": {
+      "default_img": "START4.jpg",
+      "effects": {
+        "Hint": {
+          "res": "50音表で考えてみると...？"
+        }
+      }
+    },
+    "START5": {
+      "default_img": "START5.jpg",
+      "effects": {
+        "Hint": {
+          "res": "47といえば、都道府県...？"
+        }
+      }
+    },
+    "START6": {
+      "default_img": "START6.jpg",
+      "effects": {
+        "Hint": {
+          "res": "26といえば、アルファベット...？"
+        }
+      }
+    },
     "SEAT": {
       "default_img": "SEAT.jpg",
       "effects": {
@@ -243,11 +312,19 @@
     "HINT1": {
       "default_img": "HINT1.jpg",
       "effects": {
+        "Open_rev": {
+          "res": "本を閉じて表紙を見ることが出来た",
+          "next_id": "HINT1_CLOSE"
+        }
       }
     },
     "HINT2": {
       "default_img": "HINT2.jpg",
       "effects": {
+        "Open_rev": {
+          "res": "本を閉じて表紙を見ることが出来た",
+          "next_id": "HINT2_CLOSE"
+        }
       }
     },
     "HINT3": {
@@ -259,6 +336,37 @@
         "Connect": {
           "res": "魂が生まれ変わるときの規則がわかった！",
           "next_id": "CONNECTION"
+        },
+        "Open_rev": {
+          "res": "本を閉じて表紙を見ることが出来た",
+          "next_id": "HINT3_CLOSE"
+        }
+      }
+    },
+    "HINT4": {
+      "default_img": "HINT4.jpg",
+      "effects": {
+        "Open_rev": {
+          "res": "本を閉じて表紙を見ることが出来た",
+          "next_id": "HINT4_CLOSE"
+        }
+      }
+    },
+    "HINT5": {
+      "default_img": "HINT5.jpg",
+      "effects": {
+        "Open_rev": {
+          "res": "本を閉じて表紙を見ることが出来た",
+          "next_id": "HINT5_CLOSE"
+        }
+      }
+    },
+    "HINT6": {
+      "default_img": "HINT6.jpg",
+      "effects": {
+        "Open_rev": {
+          "res": "本を閉じて表紙を見ることが出来た",
+          "next_id": "HINT6_CLOSE"
         }
       }
     },
@@ -277,6 +385,232 @@
           "res": "ヒントの魔法が使えたようだ"
         }
       }
+    },
+    "EVI1": {
+      "default_img": "EVI1.jpg",
+      "effects": {
+      }
+    },
+    "EVI2": {
+      "default_img": "EVI2.jpg",
+      "effects": {
+      }
+    },
+    "EVI3": {
+      "default_img": "EVI3.jpg",
+      "effects": {
+      }
+    },
+    "EVI4": {
+      "default_img": "EVI4.jpg",
+      "effects": {
+      }
+    },
+    "EVI5": {
+      "default_img": "EVI5.jpg",
+      "effects": {
+      }
+    },
+    "EVI6": {
+      "default_img": "EVI6.jpg",
+      "effects": {
+      }
+    },
+    "EVI7": {
+      "default_img": "EVI7.jpg",
+      "effects": {
+      }
+    },
+    "EVI8": {
+      "default_img": "EVI8.jpg",
+      "effects": {
+        "True": {
+          "res": "真実を見通すことが出来た",
+          "next_id": "EVI8_TRUE"
+        }
+      }
+    },
+    "EVI8_TRUE": {
+      "default_img": "EVI8_TRUE.jpg",
+      "effects": {
+      }
+    },
+    "HINT1_CLOSE": {
+      "default_img": "HINT1_CLOSE.jpg",
+      "effects": {
+        "Open": {
+          "res": "本を開いた",
+          "next_id": "HINT1"
+        }
+      }
+    },
+    "HINT2_CLOSE": {
+      "default_img": "HINT2_CLOSE.jpg",
+      "effects": {
+        "Open": {
+          "res": "本を開いた",
+          "next_id": "HINT2"
+        }
+      }
+    },
+    "HINT3_CLOSE": {
+      "default_img": "HINT3_CLOSE.jpg",
+      "effects": {
+        "Open": {
+          "res": "本を開いた",
+          "next_id": "HINT3"
+        }
+      }
+    },
+    "HINT4_CLOSE": {
+      "default_img": "HINT4_CLOSE.jpg",
+      "effects": {
+        "Open": {
+          "res": "本を開いた",
+          "next_id": "HINT4"
+        }
+      }
+    },
+    "HINT5_CLOSE": {
+      "default_img": "HINT5_CLOSE.jpg",
+      "effects": {
+        "Open": {
+          "res": "本を開いた",
+          "next_id": "HINT5"
+        }
+      }
+    },
+    "HINT6_CLOSE": {
+      "default_img": "HINT6_CLOSE.jpg",
+      "effects": {
+        "Open": {
+          "res": "本を開いた",
+          "next_id": "HINT6"
+        }
+      }
+    },
+    "MEMO": {
+      "default_img": "MEMO.jpg",
+      "effects": {
+        "Hint": {
+          "res": "1つの記号が1つの50音に対応するようだ"
+        }
+      }
+    },
+    "MID1": {
+      "default_img": "MID1.jpg",
+      "effects": {
+        "Hint": {
+          "res": "数字は何番目に読むのを表すのではないようだ。何文字目かを示すみたいだ"
+        }
+      }
+    },
+    "MID2": {
+      "default_img": "MID2.jpg",
+      "effects": {
+        "Hint": {
+          "res": "1つずつ順に決めていこう"
+        }
+      }
+    },
+    "MID3": {
+      "default_img": "MID3.jpg",
+      "effects": {
+        "Hint": {
+          "res": "1つの机に間違いは1つのようだ"
+        }
+      }
+    },
+    "ROOMA_1": {
+      "default_img": "ROOMA_1.jpg",
+      "effects": {
+      }
+    },
+    "ROOMA_2": {
+      "default_img": "ROOMA_2.jpg",
+      "effects": {
+        "True": {
+          "res": "「れいすい」と「とりつけ」は存在しないようだ"
+        }
+      }
+    },
+    "ROOMA_3": {
+      "default_img": "ROOMA_3.jpg",
+      "effects": {
+        "True": {
+          "res": "「でんきゅう」と「あさがお」は存在しないようだ"
+        }
+      }
+    },
+    "ROOMA_4": {
+      "default_img": "ROOMA_4.jpg",
+      "effects": {
+      }
+    },
+    "ROOMA_5": {
+      "default_img": "ROOMA_5.jpg",
+      "effects": {
+        "True": {
+          "res": "「らんたん」と「あんてん」は存在しないようだ"
+        }
+      }
+    },
+    "ROOMB_1": {
+      "default_img": "ROOMB_1.jpg",
+      "effects": {
+        "True": {
+          "res": "「はるまき」と「あいかた」は存在しないようだ"
+        }
+      }
+    },
+    "ROOMB_2": {
+      "default_img": "ROOMB_2.jpg",
+      "effects": {
+      }
+    },
+    "ROOMB_3": {
+      "default_img": "ROOMB_3.jpg",
+      "effects": {
+      }
+    },
+    "ROOMB_4": {
+      "default_img": "ROOMB_4.jpg",
+      "effects": {
+        "True": {
+          "res": "「ひらいしん」と「あけがた」は存在しないようだ"
+        }
+      }
+    },
+    "ROOMB_5": {
+      "default_img": "ROOMB_5.jpg",
+      "effects": {
+      }
+    },
+    "SIGN": {
+      "default_img": "SIGN.jpg",
+      "effects": {
+        "Apply": {
+          "res": "紙に火が付き、隠されていた言葉を見つけた",
+          "next_id": "SIGN_TRUE"
+        }
+      }
+    },
+    "SIGN_TRUE": {
+      "default_img": "SIGN_TRUE.jpg",
+      "effects": {
+      }
+    },
+    "CHARM": {
+      "default_img": "CHARM.jpg",
+      "effects": {
+        "Color_rev": {
+          "res": "色を消すことで、呪いを無くすことが出来た！",
+          "next_id": "CHARM_TRUE"
+        }
+      }
+    },
+    "CHARM_TRUE": {
+      "default_img": "CHARM_TRUE.jpg"
     }
   }
 }
