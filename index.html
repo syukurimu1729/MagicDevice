@@ -165,6 +165,12 @@
     </div>
 
     <script>
+        // ==========================================
+        // 【キャッシュ対策】バージョン管理
+        // 画像やJSONを更新したら、ここの数字を上げてください（例: "1.0.1"）
+        // ==========================================
+        const APP_VER = "1.0.0";
+
         let gameData = null;
         let history = []; 
 
@@ -233,7 +239,8 @@
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
                 mediaTitle.innerText = "ANALYZING...";
-                displayImg.src = "media/assets/" + data.default_img;
+                // 画像読み込み時にバージョンを付与
+                displayImg.src = "media/assets/" + data.default_img + "?v=" + APP_VER;
                 imgArea.classList.remove('hidden');
 
                 if (data.url) {
@@ -270,7 +277,11 @@
             if (effect) {
                 history.push(mediaId);
                 resultText.innerText = effect.res;
-                displayImg.src = "media/assets/" + effect.img;
+                
+                // 画像が定義されている場合のみバージョン付きで更新
+                if (effect.img) {
+                    displayImg.src = "media/assets/" + effect.img + "?v=" + APP_VER;
+                }
 
                 if (effect.url) {
                     jumpLink.href = effect.url;
