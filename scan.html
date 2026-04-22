@@ -86,7 +86,8 @@ window.onload = loadData;
 
 async function loadData(){
   try{
-    const res = await fetch('magics.json');
+    // こちらもキャッシュを回避
+    const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
     gameData = await res.json();
   }catch(e){ gameData = { magics: [], media_data: {} }; }
   startScanner("environment");

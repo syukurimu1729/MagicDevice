@@ -170,7 +170,8 @@
 
         async function init() {
             try {
-                const res = await fetch('magics.json');
+                // URLの末尾に現在の時間をくっつけて、常に違うURLとして認識させる
+                const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
                 gameData = await res.json();
                 updateUI();
             } catch (e) { console.error("Data Load Error"); }
