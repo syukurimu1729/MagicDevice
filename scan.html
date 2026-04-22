@@ -86,7 +86,7 @@ window.onload = loadData;
 
 async function loadData(){
   try{
-    // こちらもキャッシュを回避
+    // JSONは常に最新を自動取得する設計に変更
     const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
     gameData = await res.json();
   }catch(e){ gameData = { magics: [], media_data: {} }; }
@@ -124,11 +124,28 @@ function enableAutoFocus(){
     try {
       const track = html5QrCode?.getRunningTrack();
       if (!track) return;
+      
+      // カメラが持っている機能（Capabilities）を取得
       const caps = track.getCapabilities();
-      if (caps.focusMode?.includes('continuous')) await track.applyConstraints({ advanced: [{focusMode: 'continuous'}] });
-    } catch (e) {}
+      
+      // 'continuous'（連続オートフォーカス）に対応しているか判定（主にAndroid）
+      if (caps.focusMode && caps.focusMode.includes('continuous')) {
+        await track.applyConstraints({ advanced: [{focusMode: 'continuous'}] });
+      } else {
+        // iPhoneなど非対応の場合は、OS標準のフォーカスに任せるためループを即座に止める
+        if (focusIntervalId) {
+          clearInterval(focusIntervalId);
+          focusIntervalId = null;
+        }
+      }
+    } catch (e) {
+      // エラーが起きた場合もループを止める
+      if (focusIntervalId) clearInterval(focusIntervalId);
+    }
   };
+  
   apply();
+  // 3秒ごとに実行（ただしiPhoneなら最初の1回で止まる）
   focusIntervalId = setInterval(apply, 3000);
 }
 
@@ -138,14 +155,11 @@ function pressScan(){
 }
 
 async function handleSuccess(rawText){
-  // 汚れ（アスタリスク）除去と整形
   const text = (rawText||"").replace(/\*/g,"").trim();
   
-  // --- 特定URLの判定（MEDIA接続への変換） ---
   const flowConnectUrl = "https://syukurimu1729.github.io/FlowConnect/";
   if(text === flowConnectUrl || text === flowConnectUrl + "index.html"){
     playSuccessEffect();
-    // 媒体ID「FORMGAME」として保存して遷移
     localStorage.setItem('currentMedia', "FORMGAME");
     showOverlay("魔法陣に接続中...");
     setTimeout(() => {
@@ -154,7 +168,6 @@ async function handleSuccess(rawText){
     return;
   }
 
-  // --- 既存の「MEDIA:」形式の判定 ---
   if(text.startsWith("MEDIA:")){
     const mediaId = text.split(":")[1];
     if(gameData?.media_data?.[mediaId]){
@@ -165,13 +178,23 @@ async function handleSuccess(rawText){
     }
   }
 
-  // --- 通常の魔法（Magics）の判定 ---
+  // --- 魔法の取得処理（重複防止のバグ修正） ---
   const magic = gameData?.magics?.find(m => m.code === text);
   if(magic){
-    playSuccessEffect();
     let my = JSON.parse(localStorage.getItem('myMagics') || "[]");
-    if(!my.includes(magic.id)){ my.push(magic.id); localStorage.setItem('myMagics', JSON.stringify(my)); }
-    showModal(magic.name, magic.desc);
+    
+    // まだ習得していない場合のみ追加処理を行う
+    if(!my.includes(magic.id)){
+      playSuccessEffect();
+      my.push(magic.id);
+      localStorage.setItem('myMagics', JSON.stringify(my));
+      showModal(magic.name, magic.desc);
+    } else {
+      // 既に習得済みの場合の処理（弾く）
+      playErrorEffect();
+      showOverlay("既に習得済みの魔法です");
+      resetScannerState();
+    }
   } else {
     playErrorEffect();
     showOverlay("未登録のコードです");

@@ -21,7 +21,7 @@
             font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 15px;
             transition: background 0.8s; overflow-x: hidden; box-sizing: border-box;
             animation: fadeIn 0.8s ease-out;
-            padding-bottom: 80px; /* スキャンボタン用の余白 */
+            padding-bottom: 80px;
         }
 
         body::before {
@@ -87,7 +87,6 @@
         .btn-cast:active { transform: scale(0.95); filter: brightness(1.2); }
         .btn-cast:disabled { background: #333; box-shadow: none; cursor: not-allowed; opacity: 0.5; }
 
-        /* 空間転送ボタン（現在のタブで開く） */
         .btn-url {
             background: linear-gradient(135deg, var(--accent-blue), #4facfe);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.5);
@@ -98,7 +97,6 @@
             transition: 0.2s;
         }
 
-        /* スキャンボタンをしっかりしたボタンデザインに */
         .scan-nav {
             position: fixed; bottom: 20px; left: 0; width: 100%;
             display: flex; justify-content: center; z-index: 100;
@@ -165,10 +163,7 @@
     </div>
 
     <script>
-        // ==========================================
-        // 【キャッシュ対策】バージョン管理
-        // 画像やJSONを更新したら、ここの数字を上げてください（例: "1.0.1"）
-        // ==========================================
+        // 画像用のバージョン管理（画像を差し替えたらここの数値を上げる）
         const APP_VER = "1.0.0";
 
         let gameData = null;
@@ -176,7 +171,7 @@
 
         async function init() {
             try {
-                // URLの末尾に現在の時間をくっつけて、常に違うURLとして認識させる
+                // JSONは常に最新を自動取得する設計に変更
                 const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
                 gameData = await res.json();
                 updateUI();
@@ -196,7 +191,6 @@
             const urlAction = document.getElementById('url-action');
             const jumpLink = document.getElementById('jump-link');
 
-            // 1. 魔法プルダウンの更新（反転を統合）
             const currentSelection = select.value;
             select.innerHTML = '<option value="">-- 魔法を選択 --</option>';
             let hasMagic = false;
@@ -204,13 +198,11 @@
 
             gameData.magics.forEach(m => {
                 if (myMagics.includes(m.id) && m.id !== 'Reverse') {
-                    // 通常
                     const opt = document.createElement('option');
                     opt.value = m.id;
                     opt.innerText = m.name;
                     select.appendChild(opt);
                     
-                    // 反転版の選択肢を追加
                     if (canReverse) {
                         const revOpt = document.createElement('option');
                         revOpt.value = m.id + "_rev";
@@ -233,13 +225,12 @@
                 document.getElementById('cast-button').disabled = false;
             }
 
-            // 2. 媒体データの反映
             urlAction.classList.add('hidden');
 
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
                 mediaTitle.innerText = "ANALYZING...";
-                // 画像読み込み時にバージョンを付与
+                // 画像にはキャッシュ対策のAPP_VERを付与
                 displayImg.src = "media/assets/" + data.default_img + "?v=" + APP_VER;
                 imgArea.classList.remove('hidden');
 
@@ -278,7 +269,6 @@
                 history.push(mediaId);
                 resultText.innerText = effect.res;
                 
-                // 画像が定義されている場合のみバージョン付きで更新
                 if (effect.img) {
                     displayImg.src = "media/assets/" + effect.img + "?v=" + APP_VER;
                 }

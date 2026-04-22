@@ -601,7 +601,7 @@
       }
     },
     "CHARM": {
-      "default_img": "CHARM.jpg",
+      "default_img": "CHARM_TRUE.jpg",
       "effects": {
         "Color_rev": {
           "res": "色を消すことで、呪いを無くすことが出来た！",
@@ -610,7 +610,18 @@
       }
     },
     "CHARM_TRUE": {
-      "default_img": "CHARM_TRUE.jpg"
+      "default_img": "CHARM.jpg"
+    },
+    "THREES_ONE_ORIGIN": {
+      "default_img": "NAME.jpg"
+    },
+    "NAME": {
+      "default_img": "NAME.jpg",
+      "effects": {
+        "Soul": {
+          "res": "青い目を持つ双子の兄と同じ魂のようだ..."
+        }
+      }
     }
   }
 }
