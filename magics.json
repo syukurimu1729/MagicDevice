@@ -615,7 +615,7 @@
     "THREES_ONE_ORIGIN": {
       "default_img": "NAME.jpg"
     },
-    "NAME": {
+    "NAMETAG": {
       "default_img": "NAME.jpg",
       "effects": {
         "Soul": {
