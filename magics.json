@@ -622,6 +622,18 @@
           "res": "青い目を持つ双子の兄と同じ魂のようだ...失われた文字はスで、濁点や半濁点は無視したものが兄の名だ"
         }
       }
+    },
+    "DOOR": {
+      "default_img": "DOOR.jpg",
+      "effects": {
+        "Open": {
+          "res": "扉が開いた",
+          "next_id": "DOOR_OPEN"
+        }
+      }
+    },
+    "DOOR_OPEN": {
+      "default_img": "DOOR_OPEN.jpg"
     }
   }
 }
