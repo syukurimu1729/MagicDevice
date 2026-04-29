@@ -164,7 +164,7 @@
       }
     },
     "FORMGAME": {
-      "default_img": "FROMGAME.jpg",
+      "default_img": "GAME.jpg",
       "url": "https://syukurimu1729.github.io/FlowConnect/",
       "url_text": "魔法陣を展開する",
       "effects": {
