@@ -163,17 +163,27 @@
     </div>
 
     <script>
-        // 画像用のバージョン管理（画像を差し替えたらここの数値を上げる）
-        const APP_VER = "1.0.0";
+        const APP_VER = "1.0.1"; // 編集したのでバージョンを少し上げました
 
         let gameData = null;
         let history = []; 
 
         async function init() {
             try {
-                // JSONは常に最新を自動取得する設計に変更
                 const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
                 gameData = await res.json();
+
+                // ★追加: 特定のコードを自動習得させる処理
+                // magics.jsonの中からコードが "519402" の魔法を探して、未習得なら追加する
+                let myMagics = JSON.parse(localStorage.getItem('myMagics') || "[]");
+                const targetMagic = gameData.magics.find(m => m.code === "519402");
+                
+                if (targetMagic && !myMagics.includes(targetMagic.id)) {
+                    myMagics.push(targetMagic.id);
+                    localStorage.setItem('myMagics', JSON.stringify(myMagics));
+                    console.log("Auto-learned magic:", targetMagic.name);
+                }
+
                 updateUI();
             } catch (e) { console.error("Data Load Error"); }
         }
@@ -230,7 +240,6 @@
             if (mediaId && gameData.media_data[mediaId]) {
                 const data = gameData.media_data[mediaId];
                 mediaTitle.innerText = "ANALYZING...";
-                // 画像にはキャッシュ対策のAPP_VERを付与
                 displayImg.src = "media/assets/" + data.default_img + "?v=" + APP_VER;
                 imgArea.classList.remove('hidden');
 
