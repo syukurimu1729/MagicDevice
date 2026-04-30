@@ -7,18 +7,18 @@
 <script src="https://unpkg.com/html5-qrcode"></script>
 <style>
 :root{
-  --accent-red:#ff2d55;
-  --ready-green:#00ffcc;
-  --panel-dark:#0f1120;
-  --glow-red:0 0 18px rgba(255,45,85,0.5);
-  --glow-green:0 0 18px rgba(0,255,204,0.45);
+  --accent-red:#ff2d55;
+  --ready-green:#00ffcc;
+  --panel-dark:#0f1120;
+  --glow-red:0 0 18px rgba(255,45,85,0.5);
+  --glow-green:0 0 18px rgba(0,255,204,0.45);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%; width:100%; overflow:hidden;}
 body{
-  background:#000; color:#e6e9ff;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  display:flex; flex-direction:column;
+  background:#000; color:#e6e9ff;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  display:flex; flex-direction:column;
 }
 #reader-wrapper{ position:relative; width:100%; flex: 1; background:#000; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 #reader{ width:100%!important; height:100%!important; }
@@ -50,32 +50,32 @@ body{
 </head>
 <body>
 <div id="reader-wrapper">
-  <div id="success-flash"></div>
-  <div id="error-flash"></div>
-  <div id="reader"></div>
-  <div id="overlay-msg"></div>
+  <div id="success-flash"></div>
+  <div id="error-flash"></div>
+  <div id="reader"></div>
+  <div id="overlay-msg"></div>
 </div>
 <div class="controls">
-  <div id="status-msg">スキャン準備中...</div>
-  <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
-  <div class="action-group">
-    <button class="sub-btn" onclick="switchCamera()">🔄 カメラ切替</button>
-    <a href="index.html" class="sub-btn">戻る</a>
-  </div>
+  <div id="status-msg">スキャン準備中...</div>
+  <button id="scan-trigger" onclick="pressScan()">解析を確定する</button>
+  <div class="action-group">
+    <button class="sub-btn" onclick="switchCamera()">🔄 カメラ切替</button>
+    <a href="index.html" class="sub-btn">戻る</a>
+  </div>
 </div>
 <div id="result-modal">
-  <div class="modal-card">
-    <div style="font-size:0.8rem; color:#9aa3b2;">DATA ACQUIRED</div>
-    <div id="modal-name" class="modal-name"></div>
-    <div id="modal-desc" style="color:#cfe7ff; margin-bottom:15px;"></div>
-    <button class="modal-cta" onclick="confirmAndReturn()">閉じて元に戻る</button>
-    <div style="margin-top:12px;"><a href="#" style="color:#9aa3b2; font-size:0.9rem;" onclick="cancelModal();return false;">キャンセル</a></div>
-  </div>
+  <div class="modal-card">
+    <div style="font-size:0.8rem; color:#9aa3b2;">DATA ACQUIRED</div>
+    <div id="modal-name" class="modal-name"></div>
+    <div id="modal-desc" style="color:#cfe7ff; margin-bottom:15px;"></div>
+    <button class="modal-cta" onclick="confirmAndReturn()">閉じて元に戻る</button>
+    <div style="margin-top:12px;"><a href="#" style="color:#9aa3b2; font-size:0.9rem;" onclick="cancelModal();return false;">キャンセル</a></div>
+  </div>
 </div>
 
 <script>
 let html5QrCode = null;
-let currentFacingMode = "environment"; 
+let currentFacingMode = "environment"; 
 let lastResult = null;
 let scanArmed = false;
 let gameData = null;
@@ -85,173 +85,158 @@ let isSwitching = false;
 window.onload = loadData;
 
 async function loadData(){
-  try{
-    // JSONは常に最新を自動取得する設計に変更
-    const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
-    gameData = await res.json();
-  }catch(e){ gameData = { magics: [], media_data: {} }; }
-  startScanner("environment");
+  try{
+    const res = await fetch('magics.json?t=' + Date.now(), { cache: 'no-store' });
+    gameData = await res.json();
+  }catch(e){ gameData = { magics: [], media_data: {} }; }
+  startScanner("environment");
 }
 
 async function startScanner(facing){
-  if(html5QrCode){ await html5QrCode.stop().catch(()=>{}); html5QrCode = null; }
-  if(focusIntervalId){ clearInterval(focusIntervalId); focusIntervalId = null; }
-  lastResult = null; scanArmed = false;
-  setStatus("スキャナーを起動中...", false);
-  html5QrCode = new Html5Qrcode("reader");
-  const config = { fps: 25, qrbox: (w, h) => ({ width: w * 0.8, height: h * 0.8 }) };
-  try{
-    await html5QrCode.start({ facingMode: facing }, config, (text) => {
-      lastResult = text;
-      if(!scanArmed){ scanArmed = true; setStatus("解析確定可能", true); }
-    });
-    currentFacingMode = facing;
-    setStatus("コードを探索中...", false);
-    enableAutoFocus();
-  }catch(err){ setStatus("カメラの起動に失敗しました", false); }
+  if(html5QrCode){ await html5QrCode.stop().catch(()=>{}); html5QrCode = null; }
+  if(focusIntervalId){ clearInterval(focusIntervalId); focusIntervalId = null; }
+  lastResult = null; scanArmed = false;
+  setStatus("スキャナーを起動中...", false);
+  html5QrCode = new Html5Qrcode("reader");
+  const config = { fps: 25, qrbox: (w, h) => ({ width: w * 0.8, height: h * 0.8 }) };
+  try{
+    await html5QrCode.start({ facingMode: facing }, config, (text) => {
+      lastResult = text;
+      if(!scanArmed){ scanArmed = true; setStatus("解析確定可能", true); }
+    });
+    currentFacingMode = facing;
+    setStatus("コードを探索中...", false);
+    enableAutoFocus();
+  }catch(err){ setStatus("カメラの起動に失敗しました", false); }
 }
 
 async function switchCamera(){
-  if(isSwitching) return;
-  isSwitching = true;
-  const nextMode = (currentFacingMode === "environment") ? "user" : "environment";
-  await startScanner(nextMode);
-  isSwitching = false;
+  if(isSwitching) return;
+  isSwitching = true;
+  const nextMode = (currentFacingMode === "environment") ? "user" : "environment";
+  await startScanner(nextMode);
+  isSwitching = false;
 }
 
 function enableAutoFocus(){
-  const apply = async () => {
-    try {
-      const track = html5QrCode?.getRunningTrack();
-      if (!track) return;
-      
-      // カメラが持っている機能（Capabilities）を取得
-      const caps = track.getCapabilities();
-      
-      // 'continuous'（連続オートフォーカス）に対応しているか判定（主にAndroid）
-      if (caps.focusMode && caps.focusMode.includes('continuous')) {
-        await track.applyConstraints({ advanced: [{focusMode: 'continuous'}] });
-      } else {
-        // iPhoneなど非対応の場合は、OS標準のフォーカスに任せるためループを即座に止める
-        if (focusIntervalId) {
-          clearInterval(focusIntervalId);
-          focusIntervalId = null;
-        }
-      }
-    } catch (e) {
-      // エラーが起きた場合もループを止める
-      if (focusIntervalId) clearInterval(focusIntervalId);
-    }
-  };
-  
-  apply();
-  // 3秒ごとに実行（ただしiPhoneなら最初の1回で止まる）
-  focusIntervalId = setInterval(apply, 3000);
+  const apply = async () => {
+    try {
+      const track = html5QrCode?.getRunningTrack();
+      if (!track) return;
+      const caps = track.getCapabilities();
+      if (caps.focusMode && caps.focusMode.includes('continuous')) {
+        await track.applyConstraints({ advanced: [{focusMode: 'continuous'}] });
+      } else {
+        if (focusIntervalId) {
+          clearInterval(focusIntervalId);
+          focusIntervalId = null;
+        }
+      }
+    } catch (e) {
+      if (focusIntervalId) clearInterval(focusIntervalId);
+    }
+  };
+  apply();
+  focusIntervalId = setInterval(apply, 3000);
 }
 
 function pressScan(){
-  if(!scanArmed || !lastResult){ showOverlay("対象を捉えてください"); playErrorEffect(); return; }
-  handleSuccess(lastResult);
+  if(!scanArmed || !lastResult){ showOverlay("対象を捉えてください"); playErrorEffect(); return; }
+  handleSuccess(lastResult);
 }
 
 async function handleSuccess(rawText){
-  const text = (rawText||"").replace(/\*/g,"").trim();
-  
-  const flowConnectUrl = "https://syukurimu1729.github.io/FlowConnect/";
-  if(text === flowConnectUrl || text === flowConnectUrl + "index.html"){
-    playSuccessEffect();
-    localStorage.setItem('currentMedia', "FORMGAME");
-    showOverlay("魔法陣に接続中...");
-    setTimeout(() => {
-      confirmAndReturn();
-    }, 800);
-    return;
-  }
+  const text = (rawText||"").replace(/\*/g,"").trim();
+  const flowConnectUrl = "https://syukurimu1729.github.io/FlowConnect/";
+  
+  if(text === flowConnectUrl || text === flowConnectUrl + "index.html"){
+    playSuccessEffect();
+    localStorage.setItem('currentMedia', "FORMGAME");
+    showOverlay("魔法陣に接続中...");
+    setTimeout(() => { confirmAndReturn(); }, 800);
+    return;
+  }
 
-  if(text.startsWith("MEDIA:")){
-    const mediaId = text.split(":")[1];
-    if(gameData?.media_data?.[mediaId]){
-      playSuccessEffect();
-      localStorage.setItem('currentMedia', mediaId);
-      confirmAndReturn();
-      return;
-    }
-  }
+  if(text.startsWith("MEDIA:")){
+    const mediaId = text.split(":")[1];
+    if(gameData?.media_data?.[mediaId]){
+      playSuccessEffect();
+      localStorage.setItem('currentMedia', mediaId);
+      confirmAndReturn();
+      return;
+    }
+  }
 
-  // --- 魔法の取得処理（重複防止のバグ修正） ---
-  const magic = gameData?.magics?.find(m => m.code === text);
-  if(magic){
-    let my = JSON.parse(localStorage.getItem('myMagics') || "[]");
-    
-    // まだ習得していない場合のみ追加処理を行う
-    if(!my.includes(magic.id)){
-      playSuccessEffect();
-      my.push(magic.id);
-      localStorage.setItem('myMagics', JSON.stringify(my));
-      showModal(magic.name, magic.desc);
-    } else {
-      // 既に習得済みの場合の処理（弾く）
-      playErrorEffect();
-      showOverlay("既に習得済みの魔法です");
-      resetScannerState();
-    }
-  } else {
-    playErrorEffect();
-    showOverlay("未登録のコードです");
-    resetScannerState();
-  }
+  const magic = gameData?.magics?.find(m => m.code === text);
+  if(magic){
+    let my = JSON.parse(localStorage.getItem('myMagics') || "[]");
+    if(!my.includes(magic.id)){
+      playSuccessEffect();
+      my.push(magic.id);
+      localStorage.setItem('myMagics', JSON.stringify(my));
+      showModal(magic.name, magic.desc);
+    } else {
+      playErrorEffect();
+      showOverlay("既に習得済みの魔法です");
+      resetScannerState();
+    }
+  } else {
+    playErrorEffect();
+    showOverlay("未登録のコードです");
+    resetScannerState();
+  }
 }
 
 function resetScannerState(){
-  scanArmed = false; 
-  lastResult = null; 
-  setStatus("コードを探索中...", false);
+  scanArmed = false; 
+  lastResult = null; 
+  setStatus("コードを探索中...", false);
 }
 
 function setStatus(text, ready){
-  const st = document.getElementById('status-msg');
-  if(st) {
-    st.innerText = text; 
-    st.classList.toggle('ready', !!ready);
-  }
+  const st = document.getElementById('status-msg');
+  if(st) {
+    st.innerText = text; 
+    st.classList.toggle('ready', !!ready);
+  }
 }
 
 function showOverlay(msg){
-  const el = document.getElementById('overlay-msg');
-  el.innerText = msg; el.classList.add('show');
-  setTimeout(()=> el.classList.remove('show'), 2000);
+  const el = document.getElementById('overlay-msg');
+  el.innerText = msg; el.classList.add('show');
+  setTimeout(()=> el.classList.remove('show'), 2000);
 }
 
 function playSuccessEffect(){
-  document.getElementById('success-flash').classList.add('show');
-  if(navigator.vibrate) navigator.vibrate(60);
-  setTimeout(()=> document.getElementById('success-flash').classList.remove('show'), 300);
+  document.getElementById('success-flash').classList.add('show');
+  if(navigator.vibrate) navigator.vibrate(60);
+  setTimeout(()=> document.getElementById('success-flash').classList.remove('show'), 300);
 }
 
 function playErrorEffect(){
-  document.getElementById('error-flash').classList.add('show');
-  if(navigator.vibrate) navigator.vibrate([40,40]);
-  setTimeout(()=> document.getElementById('error-flash').classList.remove('show'), 300);
+  document.getElementById('error-flash').classList.add('show');
+  if(navigator.vibrate) navigator.vibrate([40,40]);
+  setTimeout(()=> document.getElementById('error-flash').classList.remove('show'), 300);
 }
 
 function showModal(name, desc){
-  document.getElementById('modal-name').innerText = name;
-  document.getElementById('modal-desc').innerText = desc;
-  document.getElementById('result-modal').style.display = 'flex';
+  document.getElementById('modal-name').innerText = name;
+  document.getElementById('modal-desc').innerText = desc;
+  document.getElementById('result-modal').style.display = 'flex';
 }
 
 function cancelModal(){
-  document.getElementById('result-modal').style.display = 'none';
-  resetScannerState();
+  document.getElementById('result-modal').style.display = 'none';
+  resetScannerState();
 }
 
 async function confirmAndReturn(){
-  if(html5QrCode) await html5QrCode.stop().catch(()=>{});
-  location.href = "index.html";
+  if(html5QrCode) await html5QrCode.stop().catch(()=>{});
+  location.href = "index.html";
 }
 
 window.addEventListener('pagehide', () => {
-  if(focusIntervalId) clearInterval(focusIntervalId);
+  if(focusIntervalId) clearInterval(focusIntervalId);
 });
 </script>
 </body>
